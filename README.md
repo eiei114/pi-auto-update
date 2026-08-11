@@ -1,61 +1,131 @@
-# pi-auto-update
+# Pi Auto Update
+
+[![Join dotfield.xyz on Discord](https://img.shields.io/badge/Join%20dotfield.xyz%20on%20Discord-5865F2?logo=discord&logoColor=white)](https://discord.gg/4945dXZVW5)
 
 [![CI](https://github.com/eiei114/pi-auto-update/actions/workflows/ci.yml/badge.svg)](https://github.com/eiei114/pi-auto-update/actions/workflows/ci.yml)
+[![Publish](https://github.com/eiei114/pi-auto-update/actions/workflows/publish.yml/badge.svg)](https://github.com/eiei114/pi-auto-update/actions/workflows/publish.yml)
 [![npm version](https://img.shields.io/npm/v/pi-auto-update.svg)](https://www.npmjs.com/package/pi-auto-update)
+[![npm downloads](https://img.shields.io/npm/dm/pi-auto-update.svg)](https://www.npmjs.com/package/pi-auto-update)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Pi package](https://img.shields.io/badge/pi-package-purple.svg)](https://pi.dev/packages)
+[![Trusted Publishing](https://img.shields.io/badge/npm-Trusted%20Publishing-blue.svg)](docs/release.md)
+<a href="https://buymeacoffee.com/ekawano114m"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="217" height="60"></a>
 
-Keep Pi and installed Pi packages current automatically.
+> Keep installed Pi packages and Pi itself current automatically at process startup.
 
-On each new Pi process, this extension runs these commands in order and waits for both checks to finish:
+## What this is
+
+Pi Auto Update is a TypeScript Pi package that runs Pi's own update commands once when a new Pi process starts. It updates installed package extensions first, then checks Pi itself, without replacing Pi's built-in updater.
+
+## Features
+
+- Runs `pi update --extensions` before `pi update`.
+- Waits for each update step to finish before starting the next one.
+- Automatically runs once per Pi process, not again after `/reload`, `/new`, `/resume`, or `/fork`.
+- Skips automatic updates when `PI_OFFLINE=1` or `PI_AUTO_UPDATE=0`.
+- Provides `/auto-update-now` for an explicit update check.
+- Reports failures in the Pi UI without aborting session startup.
+
+## Install
+
+Install the published npm package with Pi:
+
+```bash
+pi install npm:pi-auto-update
+```
+
+Pin a specific version when you want reproducible installs:
+
+```bash
+pi install npm:pi-auto-update@0.1.1
+```
+
+Install into the current project instead of your user Pi settings:
+
+```bash
+pi install npm:pi-auto-update -l
+```
+
+Or install from GitHub:
+
+```bash
+pi install git:github.com/eiei114/pi-auto-update
+```
+
+Try it without permanently installing:
+
+```bash
+pi -e npm:pi-auto-update
+```
+
+## Quick start
+
+After installation, restart Pi. On process startup, Pi Auto Update runs:
 
 ```bash
 pi update --extensions
 pi update
 ```
 
-Failures are reported in the Pi UI but do not prevent the session from starting.
+Run both checks manually at any time:
 
-## Install
-
-```bash
-pi install npm:pi-auto-update
-```
-
-Restart Pi after installation.
-
-## Behavior
-
-- Runs once for `session_start` with reason `startup`.
-- Does not rerun for `/reload`, `/new`, `/resume`, or `/fork`.
-- Skips network updates when Pi starts with `--offline` or `PI_OFFLINE=1`.
-- Set `PI_AUTO_UPDATE=0` to disable automatic startup updates temporarily.
-- Runs each command with a 15-minute timeout.
-- Shows progress in the footer and a completion or failure notification.
-
-## Manual update
-
-Run the same sequence at any time:
-
-```text
+```txt
 /auto-update-now
 ```
 
-## Security note
+Try the local checkout without permanently installing it:
 
-Installing this package opts the machine into automatic code updates from Pi and every package source configured in Pi. Review and trust those sources before installing this extension.
+```bash
+pi -e .
+```
+
+## Package contents
+
+| Path | Purpose |
+|---|---|
+| `extensions/auto-update.ts` | Startup update hook and `/auto-update-now` command |
+| `docs/release.md` | Trusted Publishing and release flow |
+| `README.md` | GitHub and npm package entrypoint |
+| `CHANGELOG.md` | Versioned release notes |
+| `LICENSE` | MIT license |
 
 ## Development
 
 ```bash
-npm ci
+npm install
 npm run ci
-pi --no-extensions -e ./extensions/auto-update.ts
+npm pack --dry-run
+PI_AUTO_UPDATE=0 pi -e .
 ```
 
 ## Release
 
-Releases use npm Trusted Publishing through `.github/workflows/publish.yml`. The repository guard rejects direct `NPM_TOKEN` and `NODE_AUTH_TOKEN` references in workflow files.
+This package is set up for npm Trusted Publishing, so no `NPM_TOKEN` is required.
+
+```bash
+npm version patch
+git push
+```
+
+See [`docs/release.md`](docs/release.md) for setup details.
+
+## Docs
+
+- [`docs/release.md`](docs/release.md) — Trusted Publishing and automated release details
+- [`ROADMAP.md`](ROADMAP.md) — current status and planned work
+
+## Security
+
+Installing this package opts the machine into automatic code updates from Pi and every package source configured in Pi. Review and trust those sources before installing this extension.
+
+Pi packages can execute code with your local permissions. For vulnerability reporting, see [`SECURITY.md`](SECURITY.md).
+
+## Links
+
+- npm: https://www.npmjs.com/package/pi-auto-update
+- GitHub: https://github.com/eiei114/pi-auto-update
+- Issues: https://github.com/eiei114/pi-auto-update/issues
 
 ## License
 
-[MIT](LICENSE)
+MIT

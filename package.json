@@ -1,6 +1,6 @@
 {
   "name": "pi-auto-update",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Automatically update installed Pi packages and Pi itself when a Pi session starts.",
   "type": "module",
   "license": "MIT",
@@ -22,6 +22,7 @@
   "homepage": "https://github.com/eiei114/pi-auto-update#readme",
   "files": [
     "extensions/",
+    "docs/",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"

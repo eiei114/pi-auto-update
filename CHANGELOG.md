@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here.
 
+## [0.1.1] - 2026-08-11
+
+### Changed
+
+- Align the README with the current Pi extension template, including the standard badge set, install paths, quick start, package contents, docs, security, and project links.
+- Include `docs/` in the published package so README release links remain available from npm.
+
 ## [0.1.0] - 2026-08-11
 
 ### Added
