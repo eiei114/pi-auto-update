@@ -1,20 +1,9 @@
 # Security Policy
 
-## Supported versions
+## Reporting
 
-Only the latest published version receives security fixes.
+Report vulnerabilities privately through GitHub Security Advisories for `eiei114/pi-auto-update`. Do not open a public issue for undisclosed vulnerabilities.
 
-## Reporting a vulnerability
+## Update trust
 
-Open a private security advisory on GitHub, or contact the maintainer by the preferred channel listed in the repository profile.
-
-Please include:
-
-- Affected version
-- Impact
-- Reproduction steps
-- Suggested fix, if known
-
-## Pi package security note
-
-Pi packages can execute code with local user permissions. Review installed packages and avoid running untrusted extensions.
+This extension automatically runs Pi package and self-update commands. Users must trust every package source configured in their Pi settings.
