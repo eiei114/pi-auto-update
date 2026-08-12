@@ -44,12 +44,40 @@ test("runs extension update before Pi update on startup", async () => {
 	const harness = createHarness();
 	await harness.handlers.get("session_start")({ reason: "startup" }, harness.ctx);
 
-	assert.deepEqual(harness.calls, [
-		["pi", "update", "--extensions"],
-		["pi", "update"],
-	]);
+	const expectedCalls =
+		process.platform === "win32"
+			? [
+					[process.env.ComSpec ?? process.env.COMSPEC ?? "cmd.exe", "/d", "/s", "/c", "pi update --extensions"],
+					[process.env.ComSpec ?? process.env.COMSPEC ?? "cmd.exe", "/d", "/s", "/c", "pi update"],
+				]
+			: [
+					["pi", "update", "--extensions"],
+					["pi", "update"],
+				];
+	assert.deepEqual(harness.calls, expectedCalls);
 	assert.deepEqual(harness.statuses.at(-1), ["pi-auto-update", undefined]);
 	assert.match(harness.notifications.at(-1)[0], /completed/);
+});
+
+test("invokes the Windows Pi shim through the command processor", async () => {
+	const originalPlatform = process.platform;
+	const originalComSpec = process.env.ComSpec;
+	Object.defineProperty(process, "platform", { configurable: true, value: "win32" });
+	process.env.ComSpec = "C:\\Windows\\System32\\cmd.exe";
+
+	try {
+		const harness = createHarness();
+		await harness.handlers.get("session_start")({ reason: "startup" }, harness.ctx);
+
+		assert.deepEqual(harness.calls, [
+			["C:\\Windows\\System32\\cmd.exe", "/d", "/s", "/c", "pi update --extensions"],
+			["C:\\Windows\\System32\\cmd.exe", "/d", "/s", "/c", "pi update"],
+		]);
+	} finally {
+		Object.defineProperty(process, "platform", { configurable: true, value: originalPlatform });
+		if (originalComSpec === undefined) delete process.env.ComSpec;
+		else process.env.ComSpec = originalComSpec;
+	}
 });
 
 test("does not rerun for replacement session events", async () => {

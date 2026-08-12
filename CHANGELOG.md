@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here.
 
+## [0.1.2] - 2026-08-13
+
+### Fixed
+
+- Invoke the Windows `pi.cmd` shim through `cmd.exe` so startup and manual updates work with npm and pnpm installations.
+- Fix the publish guard's workflow path handling on Windows.
+
 ## [0.1.1] - 2026-08-11
 
 ### Changed

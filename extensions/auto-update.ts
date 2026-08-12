@@ -8,10 +8,32 @@ type UpdateStep = {
 	args: string[];
 };
 
+type CommandInvocation = {
+	command: string;
+	args: string[];
+};
+
 const UPDATE_STEPS: UpdateStep[] = [
 	{ label: "extensions", args: ["update", "--extensions"] },
 	{ label: "Pi", args: ["update"] },
 ];
+
+/**
+ * npm and pnpm install Windows CLI entrypoints as .cmd shims. Pi's exec API
+ * deliberately uses shell:false, so resolve those shims through cmd.exe.
+ */
+export function getPiCommandInvocation(
+	args: string[],
+	platform: NodeJS.Platform = process.platform,
+	comSpec: string | undefined = process.env.ComSpec ?? process.env.COMSPEC,
+): CommandInvocation {
+	if (platform !== "win32") return { command: "pi", args };
+
+	return {
+		command: comSpec || "cmd.exe",
+		args: ["/d", "/s", "/c", ["pi", ...args].join(" ")],
+	};
+}
 
 function isTruthy(value: string | undefined): boolean {
 	return /^(1|true|yes)$/i.test(value ?? "");
@@ -49,7 +71,8 @@ export default function (pi: ExtensionAPI) {
 					ctx.ui.setStatus(STATUS_KEY, `Updating ${step.label}...`);
 
 					try {
-						const result = await pi.exec("pi", step.args, {
+						const invocation = getPiCommandInvocation(step.args);
+						const result = await pi.exec(invocation.command, invocation.args, {
 							cwd: ctx.cwd,
 							timeout: UPDATE_TIMEOUT_MS,
 						});
