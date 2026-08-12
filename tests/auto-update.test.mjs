@@ -44,10 +44,17 @@ test("runs extension update before Pi update on startup", async () => {
 	const harness = createHarness();
 	await harness.handlers.get("session_start")({ reason: "startup" }, harness.ctx);
 
-	assert.deepEqual(harness.calls, [
-		["pi", "update", "--extensions"],
-		["pi", "update"],
-	]);
+	const expectedCalls =
+		process.platform === "win32"
+			? [
+					[process.env.ComSpec ?? process.env.COMSPEC ?? "cmd.exe", "/d", "/s", "/c", "pi update --extensions"],
+					[process.env.ComSpec ?? process.env.COMSPEC ?? "cmd.exe", "/d", "/s", "/c", "pi update"],
+				]
+			: [
+					["pi", "update", "--extensions"],
+					["pi", "update"],
+				];
+	assert.deepEqual(harness.calls, expectedCalls);
 	assert.deepEqual(harness.statuses.at(-1), ["pi-auto-update", undefined]);
 	assert.match(harness.notifications.at(-1)[0], /completed/);
 });
