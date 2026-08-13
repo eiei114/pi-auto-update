@@ -5,7 +5,13 @@ import autoUpdate from "../extensions/auto-update.ts";
 
 // The test command may itself run inside a Pi/intercom process. Keep the
 // default cases deterministic; the dedicated Windows test sets this signal.
+const inheritedIntercomSessionId = process.env.PI_INTERCOM_SESSION_ID;
 delete process.env.PI_INTERCOM_SESSION_ID;
+
+test.after(() => {
+	if (inheritedIntercomSessionId === undefined) delete process.env.PI_INTERCOM_SESSION_ID;
+	else process.env.PI_INTERCOM_SESSION_ID = inheritedIntercomSessionId;
+});
 
 function createHarness(results = []) {
 	const handlers = new Map();
@@ -157,6 +163,38 @@ test("defers a Windows package lock failure and continues with Pi update", async
 		await harness.handlers.get("session_start")({ reason: "startup" }, harness.ctx);
 
 		assert.equal(harness.calls.length, 2);
+		assert.deepEqual(harness.calls[1], [
+			process.env.ComSpec ?? process.env.COMSPEC ?? "cmd.exe",
+			"/d",
+			"/s",
+			"/c",
+			"pi update",
+		]);
+		assert.match(harness.notifications.at(-1)[0], /extensions: deferred/);
+		assert.equal(harness.notifications.at(-1)[1], "info");
+	} finally {
+		Object.defineProperty(process, "platform", { configurable: true, value: originalPlatform });
+	}
+});
+
+test("defers a standalone Windows -4082 package lock failure", async () => {
+	const originalPlatform = process.platform;
+	Object.defineProperty(process, "platform", { configurable: true, value: "win32" });
+
+	try {
+		const harness = createHarness([
+			{ stdout: "", stderr: "npm ERR! exit code -4082", code: 1, killed: false },
+			{ stdout: "already current", stderr: "", code: 0, killed: false },
+		]);
+		await harness.handlers.get("session_start")({ reason: "startup" }, harness.ctx);
+
+		assert.deepEqual(harness.calls[1], [
+			process.env.ComSpec ?? process.env.COMSPEC ?? "cmd.exe",
+			"/d",
+			"/s",
+			"/c",
+			"pi update",
+		]);
 		assert.match(harness.notifications.at(-1)[0], /extensions: deferred/);
 		assert.equal(harness.notifications.at(-1)[1], "info");
 	} finally {

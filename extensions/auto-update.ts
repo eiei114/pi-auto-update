@@ -22,7 +22,7 @@ const UPDATE_STEPS: UpdateStep[] = [
 const WINDOWS_PACKAGE_LOCK_PATTERNS = [
 	/\bEBUSY\b/i,
 	/\b4294963214\b/,
-	/\b-4082\b/,
+	/-4082\b/,
 ];
 const WINDOWS_PACKAGE_LOCK_NOTICE =
 	"extensions: deferred — Windows package files are in use; close all Pi runtimes and run pi update --extensions from a shell";
