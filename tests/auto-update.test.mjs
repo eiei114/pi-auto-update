@@ -3,6 +3,10 @@ import test from "node:test";
 
 import autoUpdate from "../extensions/auto-update.ts";
 
+// The test command may itself run inside a Pi/intercom process. Keep the
+// default cases deterministic; the dedicated Windows test sets this signal.
+delete process.env.PI_INTERCOM_SESSION_ID;
+
 function createHarness(results = []) {
 	const handlers = new Map();
 	const commands = new Map();
@@ -80,6 +84,28 @@ test("invokes the Windows Pi shim through the command processor", async () => {
 	}
 });
 
+test("skips the Windows extension update while intercom is active", async () => {
+	const originalPlatform = process.platform;
+	const originalSessionId = process.env.PI_INTERCOM_SESSION_ID;
+	Object.defineProperty(process, "platform", { configurable: true, value: "win32" });
+	process.env.PI_INTERCOM_SESSION_ID = "session-123";
+
+	try {
+		const harness = createHarness();
+		await harness.handlers.get("session_start")({ reason: "startup" }, harness.ctx);
+
+		assert.deepEqual(harness.calls, [
+			[process.env.ComSpec ?? process.env.COMSPEC ?? "cmd.exe", "/d", "/s", "/c", "pi update"],
+		]);
+		assert.match(harness.notifications.at(-1)[0], /extensions: skipped/);
+		assert.equal(harness.notifications.at(-1)[1], "info");
+	} finally {
+		Object.defineProperty(process, "platform", { configurable: true, value: originalPlatform });
+		if (originalSessionId === undefined) delete process.env.PI_INTERCOM_SESSION_ID;
+		else process.env.PI_INTERCOM_SESSION_ID = originalSessionId;
+	}
+});
+
 test("does not rerun for replacement session events", async () => {
 	const harness = createHarness();
 	for (const reason of ["reload", "new", "resume", "fork"]) {
@@ -112,6 +138,30 @@ test("continues after a failed extension update", async () => {
 	assert.equal(harness.calls.length, 2);
 	assert.match(harness.notifications.at(-1)[0], /extensions: exit 1/);
 	assert.equal(harness.notifications.at(-1)[1], "warning");
+});
+
+test("defers a Windows package lock failure and continues with Pi update", async () => {
+	const originalPlatform = process.platform;
+	Object.defineProperty(process, "platform", { configurable: true, value: "win32" });
+
+	try {
+		const harness = createHarness([
+			{
+				stdout: "",
+				stderr: "npm ERR! code EBUSY\nnpm ERR! exit code 4294963214",
+				code: 1,
+				killed: false,
+			},
+			{ stdout: "already current", stderr: "", code: 0, killed: false },
+		]);
+		await harness.handlers.get("session_start")({ reason: "startup" }, harness.ctx);
+
+		assert.equal(harness.calls.length, 2);
+		assert.match(harness.notifications.at(-1)[0], /extensions: deferred/);
+		assert.equal(harness.notifications.at(-1)[1], "info");
+	} finally {
+		Object.defineProperty(process, "platform", { configurable: true, value: originalPlatform });
+	}
 });
 
 test("manual command runs updates even when automatic updates are disabled", async () => {
