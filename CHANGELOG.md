@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here.
 
+## [0.1.3] - 2026-08-13
+
+### Fixed
+
+- Defer Windows extension updates while an active Pi/intercom runtime may hold package files open.
+- Treat known Windows package-lock errors (`EBUSY`, `-4082`, and `4294963214`) as deferred updates and continue checking Pi itself.
+
 ## [0.1.2] - 2026-08-13
 
 ### Fixed

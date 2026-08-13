@@ -2,6 +2,7 @@ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-a
 
 const STATUS_KEY = "pi-auto-update";
 const UPDATE_TIMEOUT_MS = 15 * 60 * 1000;
+const INTERCOM_SESSION_ID_ENV = "PI_INTERCOM_SESSION_ID";
 
 type UpdateStep = {
 	label: string;
@@ -17,6 +18,14 @@ const UPDATE_STEPS: UpdateStep[] = [
 	{ label: "extensions", args: ["update", "--extensions"] },
 	{ label: "Pi", args: ["update"] },
 ];
+
+const WINDOWS_PACKAGE_LOCK_PATTERNS = [
+	/\bEBUSY\b/i,
+	/\b4294963214\b/,
+	/-4082\b/,
+];
+const WINDOWS_PACKAGE_LOCK_NOTICE =
+	"extensions: deferred — Windows package files are in use; close all Pi runtimes and run pi update --extensions from a shell";
 
 /**
  * npm and pnpm install Windows CLI entrypoints as .cmd shims. Pi's exec API
@@ -49,6 +58,25 @@ function shouldSkipAutoUpdate(): string | undefined {
 	return undefined;
 }
 
+export function getExtensionUpdateSkipReason(
+	platform: NodeJS.Platform = process.platform,
+	env: NodeJS.ProcessEnv = process.env,
+): string | undefined {
+	if (platform !== "win32") return undefined;
+	if (env[INTERCOM_SESSION_ID_ENV]?.trim()) {
+		return "an active pi-intercom runtime may keep extension package files locked";
+	}
+	return undefined;
+}
+
+export function isWindowsPackageLockFailure(
+	output: string,
+	platform: NodeJS.Platform = process.platform,
+): boolean {
+	if (platform !== "win32") return false;
+	return WINDOWS_PACKAGE_LOCK_PATTERNS.some((pattern) => pattern.test(output));
+}
+
 function lastOutputLine(stdout: string, stderr: string): string | undefined {
 	const lines = `${stdout}\n${stderr}`
 		.split(/\r?\n/)
@@ -63,11 +91,22 @@ export default function (pi: ExtensionAPI) {
 	async function runUpdates(ctx: ExtensionContext): Promise<void> {
 		if (inFlight) return inFlight;
 
-		inFlight = (async () => {
+	inFlight = (async () => {
 			const failures: string[] = [];
+			const notices: string[] = [];
+			const extensionSkipReason = getExtensionUpdateSkipReason();
+			const steps = extensionSkipReason
+				? UPDATE_STEPS.filter((step) => step.label !== "extensions")
+				: UPDATE_STEPS;
+
+			if (extensionSkipReason) {
+				notices.push(
+					`extensions: skipped — ${extensionSkipReason}; close all Pi runtimes and run pi update --extensions from a shell`,
+				);
+			}
 
 			try {
-				for (const step of UPDATE_STEPS) {
+				for (const step of steps) {
 					ctx.ui.setStatus(STATUS_KEY, `Updating ${step.label}...`);
 
 					try {
@@ -79,11 +118,20 @@ export default function (pi: ExtensionAPI) {
 
 						if (result.code !== 0) {
 							const detail = lastOutputLine(result.stdout, result.stderr);
-							failures.push(`${step.label}: exit ${result.code}${detail ? ` — ${detail}` : ""}`);
+							const output = `${result.stdout}\n${result.stderr}`;
+							if (step.label === "extensions" && isWindowsPackageLockFailure(output)) {
+								notices.push(WINDOWS_PACKAGE_LOCK_NOTICE);
+							} else {
+								failures.push(`${step.label}: exit ${result.code}${detail ? ` — ${detail}` : ""}`);
+							}
 						}
 					} catch (error) {
 						const message = error instanceof Error ? error.message : String(error);
-						failures.push(`${step.label}: ${message.slice(0, 300)}`);
+						if (step.label === "extensions" && isWindowsPackageLockFailure(message)) {
+							notices.push(WINDOWS_PACKAGE_LOCK_NOTICE);
+						} else {
+							failures.push(`${step.label}: ${message.slice(0, 300)}`);
+						}
 					}
 				}
 			} finally {
@@ -94,6 +142,8 @@ export default function (pi: ExtensionAPI) {
 
 			if (failures.length > 0) {
 				ctx.ui.notify(`Pi auto-update failed\n${failures.join("\n")}`, "warning");
+			} else if (notices.length > 0) {
+				ctx.ui.notify(`Pi auto-update completed\n${notices.join("\n")}`, "info");
 			} else {
 				ctx.ui.notify("Pi extensions and Pi update checks completed", "info");
 			}

@@ -23,6 +23,7 @@ Pi Auto Update is a TypeScript Pi package that runs Pi's own update commands onc
 - Waits for each update step to finish before starting the next one.
 - Automatically runs once per Pi process, not again after `/reload`, `/new`, `/resume`, or `/fork`.
 - Skips automatic updates when `PI_OFFLINE=1` or `PI_AUTO_UPDATE=0`.
+- On Windows, defers extension updates when an active Pi runtime may hold package files open.
 - Provides `/auto-update-now` for an explicit update check.
 - Reports failures in the Pi UI without aborting session startup.
 
@@ -37,7 +38,7 @@ pi install npm:pi-auto-update
 Pin a specific version when you want reproducible installs:
 
 ```bash
-pi install npm:pi-auto-update@0.1.2
+pi install npm:pi-auto-update@0.1.3
 ```
 
 Install into the current project instead of your user Pi settings:
@@ -72,6 +73,12 @@ Run both checks manually at any time:
 ```txt
 /auto-update-now
 ```
+
+On Windows, npm cannot replace an extension package while an active Pi runtime
+(including the `pi-intercom` broker) is using files inside that package. When
+that runtime is detected, the extension step is deferred and the Pi update
+still runs. If npm reports `EBUSY` (`-4082` or `4294963214`), close Pi
+runtimes and run `pi update --extensions` from a shell.
 
 Try the local checkout without permanently installing it:
 
