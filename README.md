@@ -38,7 +38,7 @@ pi install npm:pi-auto-update
 Pin a specific version when you want reproducible installs:
 
 ```bash
-pi install npm:pi-auto-update@0.1.3
+pi install npm:pi-auto-update@0.1.4
 ```
 
 Install into the current project instead of your user Pi settings:
@@ -104,6 +104,18 @@ npm run ci
 npm pack --dry-run
 PI_AUTO_UPDATE=0 pi -e .
 ```
+
+Run only the installed-package smoke when changing package metadata or startup
+loading behavior:
+
+```bash
+npm run test:installed-smoke
+```
+
+The smoke test packs the local package, installs the tarball into a temporary Pi
+agent directory, loads it through Pi's package resource loader with
+`PI_OFFLINE=1`, and asserts startup/reload handling does not invoke `pi update`
+or touch the user's real Pi settings.
 
 ## Release
 
