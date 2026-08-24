@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here.
 
+## [0.1.4] - 2026-08-24
+
+### Added
+
+- Add an installed-package startup smoke test that packs the npm package, installs it into an isolated Pi agent directory, loads it through Pi's package resource loader, and verifies offline startup does not invoke update commands.
+
+### Changed
+
+- Document the installed-package smoke verification command for development handoff.
+
 ## [0.1.3] - 2026-08-13
 
 ### Fixed
