@@ -209,7 +209,9 @@ test("loads the packed Pi package in an isolated offline startup smoke", async (
 		await loader.reload();
 		const reloadedExtension = findPackageExtension(loader.getExtensions().extensions, installedPackageDir);
 		assert.ok(reloadedExtension, "expected the installed package extension after /reload-equivalent reload");
-		await reloadedExtension.handlers.get("session_start")[0]({ reason: "reload" }, ctx);
+		const reloadedSessionStartHandlers = reloadedExtension.handlers.get("session_start");
+		assert.equal(reloadedSessionStartHandlers?.length, 1);
+		await reloadedSessionStartHandlers[0]({ reason: "reload" }, ctx);
 		assert.equal(await readOptional(logPath), "", "/reload session_start must not duplicate startup updates");
 		assert.equal(notifications.length, 1);
 	} finally {
