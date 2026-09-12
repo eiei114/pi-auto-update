@@ -73,16 +73,35 @@ export function isWindowsPackageLockFailure(
 	output: string,
 	platform: NodeJS.Platform = process.platform,
 ): boolean {
+	return isWindowsPackageLockFailureStreams(output, "", platform);
+}
+
+function isWindowsPackageLockFailureStreams(
+	stdout: string,
+	stderr: string,
+	platform: NodeJS.Platform = process.platform,
+): boolean {
 	if (platform !== "win32") return false;
-	return WINDOWS_PACKAGE_LOCK_PATTERNS.some((pattern) => pattern.test(output));
+	// npm lock failures usually land on stderr; scan it before verbose stdout.
+	const sources = stderr ? [stderr, stdout] : [stdout];
+	for (const text of sources) {
+		if (WINDOWS_PACKAGE_LOCK_PATTERNS.some((pattern) => pattern.test(text))) return true;
+	}
+	return false;
 }
 
 function lastOutputLine(stdout: string, stderr: string): string | undefined {
-	const lines = `${stdout}\n${stderr}`
-		.split(/\r?\n/)
-		.map((line) => line.trim())
-		.filter(Boolean);
-	return lines.at(-1)?.slice(0, 300);
+	const combined = stderr.length > 0 ? `${stdout}\n${stderr}` : stdout;
+	let end = combined.length;
+	while (end > 0) {
+		let start = end;
+		while (start > 0 && combined[start - 1] !== "\n") start -= 1;
+		const line = combined.slice(start, end).replace(/\r$/, "").trim();
+		if (line) return line.slice(0, 300);
+		end = start;
+		while (end > 0 && combined[end - 1] === "\n") end -= 1;
+	}
+	return undefined;
 }
 
 export default function (pi: ExtensionAPI) {
@@ -118,8 +137,10 @@ export default function (pi: ExtensionAPI) {
 
 						if (result.code !== 0) {
 							const detail = lastOutputLine(result.stdout, result.stderr);
-							const output = `${result.stdout}\n${result.stderr}`;
-							if (step.label === "extensions" && isWindowsPackageLockFailure(output)) {
+							if (
+								step.label === "extensions" &&
+								isWindowsPackageLockFailureStreams(result.stdout, result.stderr)
+							) {
 								notices.push(WINDOWS_PACKAGE_LOCK_NOTICE);
 							} else {
 								failures.push(`${step.label}: exit ${result.code}${detail ? ` — ${detail}` : ""}`);
