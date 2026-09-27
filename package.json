@@ -1,6 +1,6 @@
 {
   "name": "pi-auto-update",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Automatically update installed Pi packages and Pi itself when a Pi session starts.",
   "type": "module",
   "license": "MIT",
