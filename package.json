@@ -1,6 +1,6 @@
 {
   "name": "pi-auto-update",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Automatically update installed Pi packages and Pi itself when a Pi session starts.",
   "type": "module",
   "license": "MIT",
@@ -47,7 +47,7 @@
     "@earendil-works/pi-coding-agent": "*"
   },
   "devDependencies": {
-    "@earendil-works/pi-coding-agent": "^0.84.1",
+    "@earendil-works/pi-coding-agent": "^0.99.1",
     "@types/node": "^26.0.0",
     "typescript": "^7.0.2"
   }

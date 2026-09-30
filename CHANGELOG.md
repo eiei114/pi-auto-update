@@ -6,6 +6,12 @@
 
 All notable changes to this project are documented here.
 
+## [0.1.6] - 2026-09-30
+
+### Changed
+
+- Update `@earendil-works/pi-*` dependencies to `0.99.1`.
+
 ## [0.1.4] - 2026-08-24
 
 ### Added
