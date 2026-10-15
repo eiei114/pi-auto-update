@@ -2,13 +2,13 @@
   "schema_version": 1,
   "verification_contract": "pi-sdk-behavior-v2",
   "sdk_versions": {
-    "@earendil-works/pi-agent-core": "1.1.0",
-    "@earendil-works/pi-ai": "1.1.0",
-    "@earendil-works/pi-coding-agent": "1.1.0",
-    "@earendil-works/pi-tui": "1.1.0"
+    "@earendil-works/pi-agent-core": "1.2.0",
+    "@earendil-works/pi-ai": "1.2.0",
+    "@earendil-works/pi-coding-agent": "1.2.0",
+    "@earendil-works/pi-tui": "1.2.0"
   },
   "platform": "win32",
-  "head_sha": "1303ef4e67e6bfe630f9441e96f0040c5edae268",
+  "head_sha": "faef5bf4607f352f13ad7b7d178b40be5f4da996",
   "node_version": "v26.8.1",
   "model_inference": "none; actual Pi CLI/RPC and package extension lifecycle, with an isolated empty Pi agent directory",
   "unhandled_errors": 0,
@@ -274,16 +274,16 @@
       "command": "npm run smoke:pi",
       "exit_code": 0,
       "passed": true,
-      "evidence": "1.1.0\n\n\n",
+      "evidence": "1.2.0\n\n\n",
       "assertions": [
         {
           "id": "native_shell_boundary",
           "expected": "The native host shell launches the local Pi shim and prints the pinned SDK version",
           "observed": {
             "exit_code": 0,
-            "stdout": "1.1.0",
+            "stdout": "1.2.0",
             "stderr": "",
-            "expectedVersion": "1.1.0"
+            "expectedVersion": "1.2.0"
           },
           "passed": true
         }
