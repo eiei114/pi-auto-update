@@ -121,9 +121,9 @@ test("native shell assertion requires the exact pinned Pi version", () => {
 		passed("host_shell", {
 			responses: [],
 			exit_code: 0,
-			stdout: "1.1.0\n",
+			stdout: "1.2.0\n",
 			stderr: "",
-			expectedVersion: "1.1.0",
+			expectedVersion: "1.2.0",
 		}),
 		true,
 	);
@@ -133,7 +133,7 @@ test("native shell assertion requires the exact pinned Pi version", () => {
 			exit_code: 0,
 			stdout: "0.99.1\n",
 			stderr: "",
-			expectedVersion: "1.1.0",
+			expectedVersion: "1.2.0",
 		}),
 		false,
 	);
