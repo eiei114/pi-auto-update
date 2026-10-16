@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Reproducible mechanism and live-model checks; not a proof of vulnerability-free code.",
+  "originalRealFailure": {
+    "installedRevision": "270132e1568bfb78b4d00a5cbeca78d3b550b56d",
+    "oldPayloadBytes": 1513429,
+    "limit": 180000,
+    "error": "Complete review exceeds size limit; manual review required"
+  },
+  "automated": {
+    "command": "npm run ci && npm run test:network",
+    "tests": 78,
+    "realSdkSmokeCases": 5,
+    "covers": [
+      "byte/Unicode reconstruction",
+      "missing and duplicated coverage",
+      "replayed approvals",
+      "late findings and failures",
+      "final integration rejection",
+      "cancellation",
+      "post-review tampering",
+      "exact promotion and backup",
+      "relative npm symlink preservation",
+      "script canaries",
+      "streaming unchanged opaque artifacts"
+    ]
+  },
+  "proofs": [
+    {
+      "scenario": "isolated-public-ponytail-replay",
+      "revision": "28da8871969693b0974cbed9b783a475e7330add",
+      "model": null,
+      "oldPayloadBytes": 210928,
+      "oldPlanner": "Complete review exceeds size limit; manual review required",
+      "coverageVerified": true,
+      "sourceBatches": 2,
+      "requiredRequests": 3,
+      "completed": 3,
+      "packetBytes": [
+        171907,
+        53652,
+        25548
+      ],
+      "packetBindings": [
+        "264d4a44d76c8ec031e792bfe4bd27c680e71143e65a6398fb024dc5a184bb01",
+        "9097f666ab430f8a01420f2a7269cbfc35a91c837361d2f5f03a57c49f59065d",
+        "5ff81d71faa86f714940bd3bb310d01db875c2257c0349f7b753957bd6cb4674"
+      ],
+      "decisions": [
+        "approve",
+        "approve",
+        "approve"
+      ],
+      "outcome": "approved",
+      "sourceUnchanged": true,
+      "promotions": 0
+    },
+    {
+      "scenario": "live-benign-large-manifest",
+      "revision": "b0b81daeaf29595f717626510c5cebc3718aa114",
+      "model": "openai-codex/gpt-6-luna",
+      "oldPayloadBytes": 720875,
+      "oldPlanner": "Complete review exceeds size limit; manual review required",
+      "coverageVerified": true,
+      "sourceBatches": 4,
+      "requiredRequests": 5,
+      "completed": 5,
+      "packetBytes": [
+        129577,
+        129586,
+        129592,
+        97820,
+        3291
+      ],
+      "packetBindings": [
+        "192cf152d8b762136f32d4df6c417cbe0bdb8684da20a2f9e2c4ccb8ab356277",
+        "1dac0adf7025df5b92a90e0e9ac1e5a904cb46b791149a0405ce437048c75792",
+        "daf8128993f34ce89b0ba1bcf74e00159f5722863497d50c2499aa1156fa7718",
+        "8b49eb3f53d8ad8fd3f6d1c6137ba7e03d61100e0cb61f55c88a5c7f01bdc908",
+        "95d1892762495b1962b8bdf20429a96aeda48c865b9c9aeb394f5053293cab83"
+      ],
+      "decisions": [
+        "approve",
+        "approve",
+        "approve",
+        "approve",
+        "approve"
+      ],
+      "outcome": "approved",
+      "sourceUnchanged": true,
+      "promotions": 0
+    },
+    {
+      "scenario": "live-real-update-policy-stop",
+      "revision": "de135f74aa1d9a234ce616b21ee501847809fe77",
+      "model": "openai-codex/gpt-6-luna",
+      "oldPayloadBytes": 1513429,
+      "oldPlanner": "Complete review exceeds size limit; manual review required",
+      "coverageVerified": true,
+      "sourceBatches": 10,
+      "requiredRequests": 11,
+      "completed": 3,
+      "packetBytes": [
+        134033,
+        179107,
+        167563
+      ],
+      "packetBindings": [
+        "97cbb9a0063e0b0d85de49457f3a6e667bb6a7497ce64af32c1fb5ebdbabc6cf",
+        "f7c36d4825dd94155c0ac5331622ec3594f5a9c8ce9c5856d56cc5c5d81aaf4d",
+        "459eb7fd3f054e4b973b9ad795566658e48168fb2d941d727fdeee0cdba301ef"
+      ],
+      "decisions": [
+        "approve",
+        "approve",
+        "block"
+      ],
+      "outcome": "blocked",
+      "sourceUnchanged": true,
+      "promotions": 0
+    },
+    {
+      "scenario": "live-installed-updater-permission-only-promotion",
+      "revision": "7368922148d5fd9af5026c5f937f8139dce04b9a",
+      "model": "openai-codex/gpt-6-luna",
+      "requiredRequests": 1,
+      "completed": 1,
+      "packetBytes": [
+        48602
+      ],
+      "decisions": [
+        "approve"
+      ],
+      "outcome": "updated",
+      "artifactDigest": "f5e833695bd8c4a8b167cd647ec700ecb1e5db3f3334b0dd4b5f311f96a0ec05",
+      "installedDigestMatched": true,
+      "scope": "Permission-only reconciliation; not a claim that a dependency update was approved."
+    }
+  ],
+  "note": "Scripted approvals validate mechanics only. Live security-policy-stop details are intentionally not published; no blocked package was promoted by these proofs. The live benign proof passed every source batch and integration. Source paths, code, credentials and user-specific settings are excluded."
+}

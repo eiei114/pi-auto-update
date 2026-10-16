@@ -1,5 +1,23 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Stage supported personal package updates without executing candidate scripts; audit dependencies and require complete, zero-finding AI review before promoting the exact reviewed files.
+- Configure an independent reviewer with `autoUpdate.reviewModel` or `/auto-update-model`, using existing Pi authentication, including Codex OAuth.
+- Retain backups, promotion journals, and review reports; block incomplete checks, findings, failures, and tampering.
+
+### Changed
+
+- Replace unconditional updater commands with a fail-closed gate. Pi-core, project-local, Windows, and unsupported update types are deferred; AI approval is not a vulnerability-free guarantee.
+- Run automatic checks silently in the background without delaying startup or showing footer status/notifications; retain saved results and errors, manual-command feedback, coalescing, and shutdown cancellation.
+
+### Fixed
+
+- Preserve relative npm CLI symlinks when freezing reviewed candidates, avoiding false escaping-symlink blocks without weakening path or digest checks.
+- Replace oversized single-payload rejection with bounded, lossless reviews of all required source/manifests and a final cross-batch review. Verify complete coverage, bind each approval to its packet, cap requests/time, and reject partial approvals before promotion.
+
 ## [0.1.8] - 2026-10-16
 
 ### Changed

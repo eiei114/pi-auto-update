@@ -1,209 +1,146 @@
 import assert from "node:assert/strict";
+import { access, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import test from "node:test";
-
 import autoUpdate from "../extensions/auto-update.ts";
 
-// The test command may itself run inside a Pi/intercom process. Keep the
-// default cases deterministic; the dedicated Windows test sets this signal.
-const inheritedIntercomSessionId = process.env.PI_INTERCOM_SESSION_ID;
-delete process.env.PI_INTERCOM_SESSION_ID;
-
-test.after(() => {
-	if (inheritedIntercomSessionId === undefined) delete process.env.PI_INTERCOM_SESSION_ID;
-	else process.env.PI_INTERCOM_SESSION_ID = inheritedIntercomSessionId;
-});
-
-function createHarness(results = []) {
-	const handlers = new Map();
-	const commands = new Map();
-	const calls = [];
-	const statuses = [];
-	const notifications = [];
-
-	const pi = {
-		on(name, handler) {
-			handlers.set(name, handler);
+async function harness(t) {
+	const agent = await mkdtemp(path.join(tmpdir(), "auto-update-hook-"));
+	await writeFile(path.join(agent, "settings.json"), '{"packages":[]}');
+	const original = { PI_CODING_AGENT_DIR: process.env.PI_CODING_AGENT_DIR, PI_OFFLINE: process.env.PI_OFFLINE,
+		PI_AUTO_UPDATE: process.env.PI_AUTO_UPDATE };
+	process.env.PI_CODING_AGENT_DIR = agent;
+	delete process.env.PI_OFFLINE; delete process.env.PI_AUTO_UPDATE;
+	const handlers = new Map(), commands = new Map(), notifications = [], entries = [], statuses = [];
+	const completion = Promise.withResolvers();
+	t.after(async () => {
+		await handlers.get("session_shutdown")?.();
+		for (const [key, value] of Object.entries(original)) {
+			if (value === undefined) delete process.env[key]; else process.env[key] = value;
+		}
+		await rm(agent, { recursive: true, force: true });
+	});
+	autoUpdate({
+		on: (name, handler) => handlers.set(name, handler), registerCommand: (name, command) => commands.set(name, command),
+		appendEntry: (...args) => {
+			entries.push(args);
+			if (["auto-update-security-report", "auto-update-security-error"].includes(args[0])) completion.resolve(args);
 		},
-		registerCommand(name, command) {
-			commands.set(name, command);
-		},
-		async exec(command, args) {
-			calls.push([command, ...args]);
-			return results.shift() ?? { stdout: "ok", stderr: "", code: 0, killed: false };
-		},
-	};
-
-	const ctx = {
-		cwd: "/tmp/project",
-		hasUI: true,
-		ui: {
-			setStatus(key, value) {
-				statuses.push([key, value]);
-			},
-			notify(message, level) {
-				notifications.push([message, level]);
-			},
-		},
-	};
-
-	autoUpdate(pi);
-	return { handlers, commands, calls, statuses, notifications, ctx };
+		exec: () => { throw new Error("Unconditional Pi updates must never be invoked"); },
+	});
+	const ctx = { cwd: "/untrusted/project", hasUI: true, ui: {
+		notify: (...args) => notifications.push(args), setStatus: (...args) => statuses.push(args),
+	} };
+	return { agent, handlers, commands, notifications, entries, statuses, ctx, completed: completion.promise };
 }
 
-test("runs extension update before Pi update on startup", async () => {
-	const harness = createHarness();
-	await harness.handlers.get("session_start")({ reason: "startup" }, harness.ctx);
-
-	const expectedCalls =
-		process.platform === "win32"
-			? [
-					[process.env.ComSpec ?? process.env.COMSPEC ?? "cmd.exe", "/d", "/s", "/c", "pi update --extensions"],
-					[process.env.ComSpec ?? process.env.COMSPEC ?? "cmd.exe", "/d", "/s", "/c", "pi update"],
-				]
-			: [
-					["pi", "update", "--extensions"],
-					["pi", "update"],
-				];
-	assert.deepEqual(harness.calls, expectedCalls);
-	assert.deepEqual(harness.statuses.at(-1), ["pi-auto-update", undefined]);
-	assert.match(harness.notifications.at(-1)[0], /completed/);
+test("startup returns immediately and completes silently without unconditional updater commands", async (t) => {
+	const h = await harness(t);
+	assert.equal(h.handlers.get("session_start")({ reason: "startup" }, h.ctx), undefined);
+	assert.equal(h.entries.length, 0, "startup must not wait for the security gate");
+	const [name, result] = await h.completed;
+	assert.equal(name, "auto-update-security-report");
+	assert.deepEqual(result.report.results, []);
+	assert.deepEqual(h.notifications, []);
+	assert.deepEqual(h.statuses, []);
 });
 
-test("invokes the Windows Pi shim through the command processor", async () => {
-	const originalPlatform = process.platform;
-	const originalComSpec = process.env.ComSpec;
-	Object.defineProperty(process, "platform", { configurable: true, value: "win32" });
-	process.env.ComSpec = "C:\\Windows\\System32\\cmd.exe";
-
-	try {
-		const harness = createHarness();
-		await harness.handlers.get("session_start")({ reason: "startup" }, harness.ctx);
-
-		assert.deepEqual(harness.calls, [
-			["C:\\Windows\\System32\\cmd.exe", "/d", "/s", "/c", "pi update --extensions"],
-			["C:\\Windows\\System32\\cmd.exe", "/d", "/s", "/c", "pi update"],
-		]);
-	} finally {
-		Object.defineProperty(process, "platform", { configurable: true, value: originalPlatform });
-		if (originalComSpec === undefined) delete process.env.ComSpec;
-		else process.env.ComSpec = originalComSpec;
-	}
+test("automatic staging and blocked results never write footer status or notifications", async (t) => {
+	const h = await harness(t);
+	await mkdir(path.join(h.agent, "npm"));
+	await writeFile(path.join(h.agent, "settings.json"), '{"packages":["npm:example"]}');
+	h.handlers.get("session_start")({ reason: "startup" }, h.ctx);
+	const [name, { report }] = await h.completed;
+	assert.equal(name, "auto-update-security-report");
+	assert.equal(report.results[0].target, "personal npm packages");
+	assert.equal(report.results[0].status, "blocked");
+	assert.deepEqual(h.statuses, []);
+	assert.deepEqual(h.notifications, []);
 });
 
-test("skips the Windows extension update while intercom is active", async () => {
-	const originalPlatform = process.platform;
-	const originalSessionId = process.env.PI_INTERCOM_SESSION_ID;
-	Object.defineProperty(process, "platform", { configurable: true, value: "win32" });
-	process.env.PI_INTERCOM_SESSION_ID = "session-123";
-
-	try {
-		const harness = createHarness();
-		await harness.handlers.get("session_start")({ reason: "startup" }, harness.ctx);
-
-		assert.deepEqual(harness.calls, [
-			[process.env.ComSpec ?? process.env.COMSPEC ?? "cmd.exe", "/d", "/s", "/c", "pi update"],
-		]);
-		assert.match(harness.notifications.at(-1)[0], /extensions: skipped/);
-		assert.equal(harness.notifications.at(-1)[1], "info");
-	} finally {
-		Object.defineProperty(process, "platform", { configurable: true, value: originalPlatform });
-		if (originalSessionId === undefined) delete process.env.PI_INTERCOM_SESSION_ID;
-		else process.env.PI_INTERCOM_SESSION_ID = originalSessionId;
-	}
-});
-
-test("does not rerun for replacement session events", async () => {
-	const harness = createHarness();
+test("replacement events and duplicate startup notifications do not rerun updates", async (t) => {
+	const h = await harness(t);
 	for (const reason of ["reload", "new", "resume", "fork"]) {
-		await harness.handlers.get("session_start")({ reason }, harness.ctx);
+		h.handlers.get("session_start")({ reason }, h.ctx);
 	}
-	assert.deepEqual(harness.calls, []);
+	assert.equal(h.entries.length, 0);
+	h.handlers.get("session_start")({ reason: "startup" }, h.ctx);
+	await h.completed;
+	await h.handlers.get("session_shutdown")();
+	h.handlers.get("session_start")({ reason: "startup" }, h.ctx);
+	assert.equal(h.entries.filter(([name]) => name === "auto-update-security-report").length, 1);
+	assert.deepEqual(h.notifications, []);
+	assert.deepEqual(h.statuses, []);
 });
 
-test("skips startup updates when PI_AUTO_UPDATE is disabled", async () => {
-	const original = process.env.PI_AUTO_UPDATE;
-	process.env.PI_AUTO_UPDATE = "0";
-	try {
-		const harness = createHarness();
-		await harness.handlers.get("session_start")({ reason: "startup" }, harness.ctx);
-		assert.deepEqual(harness.calls, []);
-		assert.match(harness.notifications.at(-1)[0], /disabled/);
-	} finally {
-		if (original === undefined) delete process.env.PI_AUTO_UPDATE;
-		else process.env.PI_AUTO_UPDATE = original;
-	}
+test("offline startup is silent and the manual command cannot bypass offline mode", async (t) => {
+	const h = await harness(t); process.env.PI_OFFLINE = "1";
+	h.handlers.get("session_start")({ reason: "startup" }, h.ctx);
+	assert.deepEqual(h.notifications, []);
+	assert.equal(h.entries.length, 0);
+	await h.commands.get("auto-update-now").handler("", h.ctx);
+	assert.match(h.notifications.at(-1)[0], /blocked: offline/);
+	assert.equal(h.notifications.at(-1)[1], "warning");
+	assert.deepEqual(h.entries, [["auto-update-security-error", { reason: "offline mode" }]]);
+	assert.deepEqual(h.statuses, []);
 });
 
-test("continues after a failed extension update", async () => {
-	const harness = createHarness([
-		{ stdout: "", stderr: "registry unavailable", code: 1, killed: false },
-		{ stdout: "already current", stderr: "", code: 0, killed: false },
-	]);
-	await harness.handlers.get("session_start")({ reason: "startup" }, harness.ctx);
-
-	assert.equal(harness.calls.length, 2);
-	assert.match(harness.notifications.at(-1)[0], /extensions: exit 1/);
-	assert.equal(harness.notifications.at(-1)[1], "warning");
+test("manual invocation reports results despite automatic disable and never bypasses the gate", async (t) => {
+	const h = await harness(t); process.env.PI_AUTO_UPDATE = "0";
+	h.handlers.get("session_start")({ reason: "startup" }, h.ctx);
+	assert.deepEqual(h.notifications, []);
+	await h.commands.get("auto-update-now").handler("", h.ctx);
+	assert.match(h.notifications.at(-1)[0], /completed/);
+	assert.deepEqual(h.statuses, []);
 });
 
-test("defers a Windows package lock failure and continues with Pi update", async () => {
-	const originalPlatform = process.platform;
-	Object.defineProperty(process, "platform", { configurable: true, value: "win32" });
-
-	try {
-		const harness = createHarness([
-			{
-				stdout: "",
-				stderr: "npm ERR! code EBUSY\nnpm ERR! exit code 4294963214",
-				code: 1,
-				killed: false,
-			},
-			{ stdout: "already current", stderr: "", code: 0, killed: false },
-		]);
-		await harness.handlers.get("session_start")({ reason: "startup" }, harness.ctx);
-
-		assert.equal(harness.calls.length, 2);
-		assert.deepEqual(harness.calls[1], [
-			process.env.ComSpec ?? process.env.COMSPEC ?? "cmd.exe",
-			"/d",
-			"/s",
-			"/c",
-			"pi update",
-		]);
-		assert.match(harness.notifications.at(-1)[0], /extensions: deferred/);
-		assert.equal(harness.notifications.at(-1)[1], "info");
-	} finally {
-		Object.defineProperty(process, "platform", { configurable: true, value: originalPlatform });
-	}
+test("manual concurrent checks are coalesced and shutdown is safe", async (t) => {
+	const h = await harness(t);
+	await Promise.all([h.commands.get("auto-update-now").handler("", h.ctx), h.commands.get("auto-update-now").handler("", h.ctx)]);
+	assert.equal(h.entries.filter(([name]) => name === "auto-update-security-report").length, 1);
+	await h.handlers.get("session_shutdown")();
 });
 
-test("defers a standalone Windows -4082 package lock failure", async () => {
-	const originalPlatform = process.platform;
-	Object.defineProperty(process, "platform", { configurable: true, value: "win32" });
-
-	try {
-		const harness = createHarness([
-			{ stdout: "", stderr: "npm ERR! exit code -4082", code: 1, killed: false },
-			{ stdout: "already current", stderr: "", code: 0, killed: false },
-		]);
-		await harness.handlers.get("session_start")({ reason: "startup" }, harness.ctx);
-
-		assert.deepEqual(harness.calls[1], [
-			process.env.ComSpec ?? process.env.COMSPEC ?? "cmd.exe",
-			"/d",
-			"/s",
-			"/c",
-			"pi update",
-		]);
-		assert.match(harness.notifications.at(-1)[0], /extensions: deferred/);
-		assert.equal(harness.notifications.at(-1)[1], "info");
-	} finally {
-		Object.defineProperty(process, "platform", { configurable: true, value: originalPlatform });
-	}
+test("manual invocation joins an automatic check and still reports its result", async (t) => {
+	const h = await harness(t);
+	h.handlers.get("session_start")({ reason: "startup" }, h.ctx);
+	await h.commands.get("auto-update-now").handler("", h.ctx);
+	assert.equal(h.entries.filter(([name]) => name === "auto-update-security-report").length, 1);
+	assert.equal(h.notifications.length, 1);
+	assert.match(h.notifications[0][0], /completed/);
+	assert.deepEqual(h.statuses, []);
 });
 
-test("manual command runs updates even when automatic updates are disabled", async () => {
-	const harness = createHarness();
-	await harness.commands.get("auto-update-now").handler("", harness.ctx);
-	assert.equal(harness.calls.length, 2);
+test("automatic failures are recorded silently and shutdown handles rejection", async (t) => {
+	const h = await harness(t);
+	await writeFile(path.join(h.agent, "settings.json"), "malformed json");
+	h.handlers.get("session_start")({ reason: "startup" }, h.ctx);
+	await h.handlers.get("session_shutdown")();
+	assert.equal(h.entries[0][0], "auto-update-security-error");
+	assert.equal(typeof h.entries[0][1].reason, "string");
+	assert.deepEqual(h.notifications, []);
+	assert.deepEqual(h.statuses, []);
+});
+
+test("manual failures still produce a warning", async (t) => {
+	const h = await harness(t);
+	await writeFile(path.join(h.agent, "settings.json"), "malformed json");
+	await h.commands.get("auto-update-now").handler("", h.ctx);
+	assert.match(h.notifications.at(-1)[0], /blocked:/);
+	assert.equal(h.notifications.at(-1)[1], "warning");
+});
+
+test("shutdown cancels background work, waits for cleanup and remains silent", async (t) => {
+	const h = await harness(t);
+	await writeFile(path.join(h.agent, "settings.json"), '{"packages":["npm:example"]}');
+	h.handlers.get("session_start")({ reason: "startup" }, h.ctx);
+	await h.handlers.get("session_shutdown")();
+	const [name, { report }] = await h.completed;
+	assert.equal(name, "auto-update-security-report");
+	assert.equal(report.results[0].status, "blocked");
+	assert.equal(report.results[0].reason, "Update cancelled");
+	await assert.rejects(access(path.join(h.agent, ".auto-update-security.lock")), { code: "ENOENT" });
+	assert.deepEqual(h.notifications, []);
+	assert.deepEqual(h.statuses, []);
 });

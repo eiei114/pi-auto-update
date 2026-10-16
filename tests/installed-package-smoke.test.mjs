@@ -185,6 +185,7 @@ test("loads the packed Pi package in an isolated offline startup smoke", async (
 		assert.ok(extension, "expected the extension to load from the installed package tarball");
 		assert.equal(extension.handlers.get("session_start")?.length, 1);
 		assert.equal(typeof extension.commands.get("auto-update-now")?.handler, "function");
+		assert.equal(typeof extension.commands.get("auto-update-model")?.handler, "function");
 
 		const notifications = [];
 		const statuses = [];
@@ -203,7 +204,7 @@ test("loads the packed Pi package in an isolated offline startup smoke", async (
 
 		await extension.handlers.get("session_start")[0]({ reason: "startup" }, ctx);
 		assert.deepEqual(statuses, []);
-		assert.deepEqual(notifications.at(-1), ["Pi auto-update skipped: offline mode", "info"]);
+		assert.deepEqual(notifications, [], "offline startup must remain silent");
 		assert.equal(await readOptional(logPath), "", "offline startup must not invoke pi update");
 
 		await loader.reload();
@@ -213,7 +214,7 @@ test("loads the packed Pi package in an isolated offline startup smoke", async (
 		assert.equal(reloadedSessionStartHandlers?.length, 1);
 		await reloadedSessionStartHandlers[0]({ reason: "reload" }, ctx);
 		assert.equal(await readOptional(logPath), "", "/reload session_start must not duplicate startup updates");
-		assert.equal(notifications.length, 1);
+		assert.deepEqual(notifications, [], "/reload must remain silent");
 	} finally {
 		if (originalOffline === undefined) delete process.env.PI_OFFLINE;
 		else process.env.PI_OFFLINE = originalOffline;

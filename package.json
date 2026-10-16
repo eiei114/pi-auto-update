@@ -1,7 +1,7 @@
 {
   "name": "pi-auto-update",
   "version": "0.1.8",
-  "description": "Automatically update installed Pi packages and Pi itself when a Pi session starts.",
+  "description": "Stage Pi package updates and install only after dependency scanning and independent AI security review.",
   "type": "module",
   "license": "MIT",
   "author": "eiei114",
@@ -34,6 +34,7 @@
     "pack:check": "npm pack --dry-run",
     "ci": "npm run typecheck && npm run smoke:pi && npm test && npm run publish:guard && npm run pack:check",
     "test:installed-smoke": "node --test tests/installed-package-smoke.test.mjs",
+    "test:network": "node --test tests/real-npm.integration.mjs",
     "smoke:pi": "node scripts/pi-sdk-smoke.mjs"
   },
   "pi": {

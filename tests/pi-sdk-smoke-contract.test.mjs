@@ -18,13 +18,13 @@ const handledPrompt = {
 const successNotification = {
 	type: "extension_ui_request",
 	method: "notify",
-	message: "Pi extensions and Pi update checks completed",
+	message: "Pi security update completed: 0 updated, 0 blocked",
 	notifyType: "info",
 };
 const errorNotification = {
 	type: "extension_ui_request",
 	method: "notify",
-	message: "Pi auto-update failed\nextensions: exit 1\nPi: exit 1",
+	message: "Pi security update blocked: offline mode",
 	notifyType: "warning",
 };
 
@@ -41,7 +41,7 @@ test("RPC smoke contract parses JSONL and accepts actual command registration an
 	assert.equal(
 		passed("happy_path", {
 			responses: [commandInventory, handledPrompt, successNotification],
-			updaterInvocations: ["update --extensions", "update"],
+			updaterInvocations: [],
 			exit_code: 0,
 		}),
 		true,
@@ -74,7 +74,7 @@ test("RPC smoke contract requires handled errors and second-process reload evide
 	assert.equal(
 		passed("reload_cleanup", {
 			responses: [commandInventory, handledPrompt, successNotification],
-			updaterInvocations: ["update --extensions", "update"],
+			updaterInvocations: [],
 			exit_code: 0,
 			processExited: true,
 			timedOut: false,

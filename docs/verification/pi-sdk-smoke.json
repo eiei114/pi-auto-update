@@ -1,15 +1,15 @@
 {
   "schema_version": 1,
-  "verification_contract": "pi-sdk-behavior-v2",
+  "verification_contract": "pi-sdk-security-gate-v3",
   "sdk_versions": {
     "@earendil-works/pi-agent-core": "1.2.0",
     "@earendil-works/pi-ai": "1.2.0",
     "@earendil-works/pi-coding-agent": "1.2.0",
     "@earendil-works/pi-tui": "1.2.0"
   },
-  "platform": "win32",
-  "head_sha": "faef5bf4607f352f13ad7b7d178b40be5f4da996",
-  "node_version": "v26.8.1",
+  "platform": "darwin",
+  "head_sha": "c4deb77a8524a518ae5b20d4e36e5faabe0cf3fe",
+  "node_version": "v25.1.0",
   "model_inference": "none; actual Pi CLI/RPC and package extension lifecycle, with an isolated empty Pi agent directory",
   "unhandled_errors": 0,
   "extension_load_errors": 0,
@@ -19,44 +19,25 @@
       "command": "npm run smoke:pi",
       "exit_code": 0,
       "passed": true,
-      "evidence": "{\"type\":\"extension_ui_request\",\"method\":\"notify\",\"message\":\"Pi auto-update skipped: PI_AUTO_UPDATE is disabled\",\"notifyType\":\"info\"}\n{\"id\":\"inventory\",\"type\":\"response\",\"command\":\"get_commands\",\"success\":true,\"data\":{\"commands\":[{\"name\":\"auto-update-now\",\"description\":\"Run pi update --extensions, then pi update\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<isolated-temp>\\\\agent\\\\npm\\\\node_modules\\\\pi-auto-update\\\\extensions\\\\auto-update.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}}]}}\n\n",
+      "evidence": "{\"id\":\"inventory\",\"type\":\"response\",\"command\":\"get_commands\",\"success\":true,\"data\":{\"commands\":[{\"name\":\"auto-update-model\",\"description\":\"Show or set the independent review model: provider/model or current\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<isolated-temp>/agent/npm/node_modules/pi-auto-update/extensions/auto-update.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}},{\"name\":\"auto-update-now\",\"description\":\"Stage, scan and independently review supported package changes; install only approved bytes\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<isolated-temp>/agent/npm/node_modules/pi-auto-update/extensions/auto-update.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}}]}}\n\n",
       "assertions": [
         {
           "id": "extension_registered",
-          "expected": "The actual Pi RPC command inventory contains the installed package command auto-update-now",
+          "expected": "Actual Pi registers the installed extension command",
           "observed": {
-            "response": {
-              "id": "inventory",
-              "type": "response",
-              "command": "get_commands",
-              "success": true,
-              "data": {
-                "commands": [
-                  {
-                    "name": "auto-update-now",
-                    "description": "Run pi update --extensions, then pi update",
-                    "source": "extension",
-                    "sourceInfo": {
-                      "path": "<isolated-temp>\\agent\\npm\\node_modules\\pi-auto-update\\extensions\\auto-update.ts",
-                      "source": "cli",
-                      "scope": "temporary",
-                      "origin": "top-level"
-                    }
-                  }
-                ]
-              }
-            },
             "command": {
               "name": "auto-update-now",
-              "description": "Run pi update --extensions, then pi update",
+              "description": "Stage, scan and independently review supported package changes; install only approved bytes",
               "source": "extension",
               "sourceInfo": {
-                "path": "<isolated-temp>\\agent\\npm\\node_modules\\pi-auto-update\\extensions\\auto-update.ts",
+                "path": "<isolated-temp>/agent/npm/node_modules/pi-auto-update/extensions/auto-update.ts",
                 "source": "cli",
                 "scope": "temporary",
                 "origin": "top-level"
               }
-            }
+            },
+            "notifications": [],
+            "updaterInvocations": []
           },
           "passed": true
         }
@@ -67,44 +48,21 @@
       "command": "npm run smoke:pi",
       "exit_code": 0,
       "passed": true,
-      "evidence": "{\"type\":\"extension_ui_request\",\"method\":\"notify\",\"message\":\"Pi auto-update skipped: PI_AUTO_UPDATE is disabled\",\"notifyType\":\"info\"}\n{\"id\":\"inventory\",\"type\":\"response\",\"command\":\"get_commands\",\"success\":true,\"data\":{\"commands\":[{\"name\":\"auto-update-now\",\"description\":\"Run pi update --extensions, then pi update\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<isolated-temp>\\\\agent\\\\npm\\\\node_modules\\\\pi-auto-update\\\\extensions\\\\auto-update.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}}]}}\n{\"type\":\"extension_ui_request\",\"method\":\"setStatus\",\"statusKey\":\"pi-auto-update\",\"statusText\":\"Updating extensions...\"}\n{\"type\":\"extension_ui_request\",\"method\":\"setStatus\",\"statusKey\":\"pi-auto-update\",\"statusText\":\"Updating Pi...\"}\n{\"type\":\"extension_ui_request\",\"method\":\"setStatus\",\"statusKey\":\"pi-auto-update\"}\n{\"type\":\"extension_ui_request\",\"method\":\"notify\",\"message\":\"Pi extensions and Pi update checks completed\",\"notifyType\":\"info\"}\n{\"id\":\"feature\",\"type\":\"response\",\"command\":\"prompt\",\"success\":true,\"data\":{\"disposition\":\"handled\"}}\n\n",
+      "evidence": "{\"id\":\"inventory\",\"type\":\"response\",\"command\":\"get_commands\",\"success\":true,\"data\":{\"commands\":[{\"name\":\"auto-update-model\",\"description\":\"Show or set the independent review model: provider/model or current\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<isolated-temp>/agent/npm/node_modules/pi-auto-update/extensions/auto-update.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}},{\"name\":\"auto-update-now\",\"description\":\"Stage, scan and independently review supported package changes; install only approved bytes\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<isolated-temp>/agent/npm/node_modules/pi-auto-update/extensions/auto-update.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}}]}}\n{\"type\":\"entry_appended\",\"entry\":{\"type\":\"custom\",\"customType\":\"auto-update-security-report\",\"data\":{\"report\":{\"started\":\"2026-10-16T19:19:59.923Z\",\"reviewModel\":\"current\",\"notices\":[\"Pi core and project-local packages deferred: no verified promotion adapter\"],\"results\":[]},\"reportPath\":\"/private<isolated-temp>/agent/auto-update-security/reports/bc95a965-db1c-4b26-addc-90f236fc5821.json\"},\"id\":\"d061ebd6\",\"parentId\":\"b7ef3992\",\"timestamp\":\"2026-10-16T19:19:59.924Z\"}}\n{\"type\":\"extension_ui_request\",\"method\":\"notify\",\"message\":\"Pi security update completed: 0 updated, 0 blocked\\nPi core and project-local packages deferred: no verified promotion adapter\\nReport: /private<isolated-temp>/agent/auto-update-security/reports/bc95a965-db1c-4b26-addc-90f236fc5821.json\",\"notifyType\":\"info\"}\n{\"id\":\"feature\",\"type\":\"response\",\"command\":\"prompt\",\"success\":true,\"data\":{\"disposition\":\"handled\"}}\n\n",
       "assertions": [
         {
           "id": "feature_response",
-          "expected": "The actual Pi host handles /auto-update-now, invokes both updater commands, and emits the successful update notification",
+          "expected": "Pi handles a no-target security check without invoking an unconditional updater",
           "observed": {
-            "registration": {
-              "response": {
-                "id": "inventory",
-                "type": "response",
-                "command": "get_commands",
-                "success": true,
-                "data": {
-                  "commands": [
-                    {
-                      "name": "auto-update-now",
-                      "description": "Run pi update --extensions, then pi update",
-                      "source": "extension",
-                      "sourceInfo": {
-                        "path": "<isolated-temp>\\agent\\npm\\node_modules\\pi-auto-update\\extensions\\auto-update.ts",
-                        "source": "cli",
-                        "scope": "temporary",
-                        "origin": "top-level"
-                      }
-                    }
-                  ]
-                }
-              },
-              "command": {
-                "name": "auto-update-now",
-                "description": "Run pi update --extensions, then pi update",
-                "source": "extension",
-                "sourceInfo": {
-                  "path": "<isolated-temp>\\agent\\npm\\node_modules\\pi-auto-update\\extensions\\auto-update.ts",
-                  "source": "cli",
-                  "scope": "temporary",
-                  "origin": "top-level"
-                }
+            "command": {
+              "name": "auto-update-now",
+              "description": "Stage, scan and independently review supported package changes; install only approved bytes",
+              "source": "extension",
+              "sourceInfo": {
+                "path": "<isolated-temp>/agent/npm/node_modules/pi-auto-update/extensions/auto-update.ts",
+                "source": "cli",
+                "scope": "temporary",
+                "origin": "top-level"
               }
             },
             "prompt": {
@@ -120,20 +78,11 @@
               {
                 "type": "extension_ui_request",
                 "method": "notify",
-                "message": "Pi auto-update skipped: PI_AUTO_UPDATE is disabled",
-                "notifyType": "info"
-              },
-              {
-                "type": "extension_ui_request",
-                "method": "notify",
-                "message": "Pi extensions and Pi update checks completed",
+                "message": "Pi security update completed: 0 updated, 0 blocked\nPi core and project-local packages deferred: no verified promotion adapter\nReport: /private<isolated-temp>/agent/auto-update-security/reports/bc95a965-db1c-4b26-addc-90f236fc5821.json",
                 "notifyType": "info"
               }
             ],
-            "updaterInvocations": [
-              "update --extensions",
-              "update"
-            ]
+            "updaterInvocations": []
           },
           "passed": true
         }
@@ -144,82 +93,23 @@
       "command": "npm run smoke:pi",
       "exit_code": 0,
       "passed": true,
-      "evidence": "{\"type\":\"extension_ui_request\",\"method\":\"notify\",\"message\":\"Pi auto-update skipped: PI_AUTO_UPDATE is disabled\",\"notifyType\":\"info\"}\n{\"id\":\"inventory\",\"type\":\"response\",\"command\":\"get_commands\",\"success\":true,\"data\":{\"commands\":[{\"name\":\"auto-update-now\",\"description\":\"Run pi update --extensions, then pi update\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<isolated-temp>\\\\agent\\\\npm\\\\node_modules\\\\pi-auto-update\\\\extensions\\\\auto-update.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}}]}}\n{\"type\":\"extension_ui_request\",\"method\":\"setStatus\",\"statusKey\":\"pi-auto-update\",\"statusText\":\"Updating extensions...\"}\n{\"type\":\"extension_ui_request\",\"method\":\"setStatus\",\"statusKey\":\"pi-auto-update\",\"statusText\":\"Updating Pi...\"}\n{\"type\":\"extension_ui_request\",\"method\":\"setStatus\",\"statusKey\":\"pi-auto-update\"}\n{\"type\":\"extension_ui_request\",\"method\":\"notify\",\"message\":\"Pi auto-update failed\\nextensions: exit 1 — ����\\\\�ȃv���O�����܂��̓o�b�` �t�@�C���Ƃ��ĔF������Ă��܂���B\\nPi: exit 1 — ����\\\\�ȃv���O�����܂��̓o�b�` �t�@�C���Ƃ��ĔF������Ă��܂���B\",\"notifyType\":\"warning\"}\n{\"id\":\"feature\",\"type\":\"response\",\"command\":\"prompt\",\"success\":true,\"data\":{\"disposition\":\"handled\"}}\n\n",
+      "evidence": "{\"id\":\"inventory\",\"type\":\"response\",\"command\":\"get_commands\",\"success\":true,\"data\":{\"commands\":[{\"name\":\"auto-update-model\",\"description\":\"Show or set the independent review model: provider/model or current\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<isolated-temp>/agent/npm/node_modules/pi-auto-update/extensions/auto-update.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}},{\"name\":\"auto-update-now\",\"description\":\"Stage, scan and independently review supported package changes; install only approved bytes\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<isolated-temp>/agent/npm/node_modules/pi-auto-update/extensions/auto-update.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}}]}}\n{\"type\":\"entry_appended\",\"entry\":{\"type\":\"custom\",\"customType\":\"auto-update-security-error\",\"data\":{\"reason\":\"offline mode\"},\"id\":\"e7ad55f4\",\"parentId\":\"d73d74fa\",\"timestamp\":\"2026-10-16T19:20:00.136Z\"}}\n{\"type\":\"extension_ui_request\",\"method\":\"notify\",\"message\":\"Pi security update blocked: offline mode\",\"notifyType\":\"warning\"}\n{\"id\":\"feature\",\"type\":\"response\",\"command\":\"prompt\",\"success\":true,\"data\":{\"disposition\":\"handled\"}}\n\n",
       "assertions": [
         {
           "id": "handled_error",
-          "expected": "The real extension command handles unavailable updater executables, attempts both steps, and reports a warning",
+          "expected": "Manual checks cannot bypass offline mode",
           "observed": {
-            "prompt": {
-              "id": "feature",
-              "type": "response",
-              "command": "prompt",
-              "success": true,
-              "data": {
-                "disposition": "handled"
-              }
-            },
-            "notification": {
-              "type": "extension_ui_request",
-              "method": "notify",
-              "message": "Pi auto-update failed\nextensions: exit 1 — ����\\�ȃv���O�����܂��̓o�b�` �t�@�C���Ƃ��ĔF������Ă��܂���B\nPi: exit 1 — ����\\�ȃv���O�����܂��̓o�b�` �t�@�C���Ƃ��ĔF������Ă��܂���B",
-              "notifyType": "warning"
-            }
-          },
-          "passed": true
-        }
-      ]
-    },
-    {
-      "name": "reload_cleanup",
-      "command": "npm run smoke:pi",
-      "exit_code": 0,
-      "passed": true,
-      "evidence": "First actual Pi process:\n{\"type\":\"extension_ui_request\",\"method\":\"notify\",\"message\":\"Pi auto-update skipped: PI_AUTO_UPDATE is disabled\",\"notifyType\":\"info\"}\n{\"id\":\"inventory\",\"type\":\"response\",\"command\":\"get_commands\",\"success\":true,\"data\":{\"commands\":[{\"name\":\"auto-update-now\",\"description\":\"Run pi update --extensions, then pi update\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<isolated-temp>\\\\agent\\\\npm\\\\node_modules\\\\pi-auto-update\\\\extensions\\\\auto-update.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}}]}}\n\n\nSecond actual Pi process:\n{\"type\":\"extension_ui_request\",\"method\":\"notify\",\"message\":\"Pi auto-update skipped: PI_AUTO_UPDATE is disabled\",\"notifyType\":\"info\"}\n{\"id\":\"inventory\",\"type\":\"response\",\"command\":\"get_commands\",\"success\":true,\"data\":{\"commands\":[{\"name\":\"auto-update-now\",\"description\":\"Run pi update --extensions, then pi update\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<isolated-temp>\\\\agent\\\\npm\\\\node_modules\\\\pi-auto-update\\\\extensions\\\\auto-update.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}}]}}\n{\"type\":\"extension_ui_request\",\"method\":\"setStatus\",\"statusKey\":\"pi-auto-update\",\"statusText\":\"Updating extensions...\"}\n{\"type\":\"extension_ui_request\",\"method\":\"setStatus\",\"statusKey\":\"pi-auto-update\",\"statusText\":\"Updating Pi...\"}\n{\"type\":\"extension_ui_request\",\"method\":\"setStatus\",\"statusKey\":\"pi-auto-update\"}\n{\"type\":\"extension_ui_request\",\"method\":\"notify\",\"message\":\"Pi extensions and Pi update checks completed\",\"notifyType\":\"info\"}\n{\"id\":\"feature\",\"type\":\"response\",\"command\":\"prompt\",\"success\":true,\"data\":{\"disposition\":\"handled\"}}\n\n",
-      "assertions": [
-        {
-          "id": "reloaded_extension_registered",
-          "expected": "A second actual Pi process registers the installed package command",
-          "observed": {
-            "response": {
-              "id": "inventory",
-              "type": "response",
-              "command": "get_commands",
-              "success": true,
-              "data": {
-                "commands": [
-                  {
-                    "name": "auto-update-now",
-                    "description": "Run pi update --extensions, then pi update",
-                    "source": "extension",
-                    "sourceInfo": {
-                      "path": "<isolated-temp>\\agent\\npm\\node_modules\\pi-auto-update\\extensions\\auto-update.ts",
-                      "source": "cli",
-                      "scope": "temporary",
-                      "origin": "top-level"
-                    }
-                  }
-                ]
-              }
-            },
             "command": {
               "name": "auto-update-now",
-              "description": "Run pi update --extensions, then pi update",
+              "description": "Stage, scan and independently review supported package changes; install only approved bytes",
               "source": "extension",
               "sourceInfo": {
-                "path": "<isolated-temp>\\agent\\npm\\node_modules\\pi-auto-update\\extensions\\auto-update.ts",
+                "path": "<isolated-temp>/agent/npm/node_modules/pi-auto-update/extensions/auto-update.ts",
                 "source": "cli",
                 "scope": "temporary",
                 "origin": "top-level"
               }
-            }
-          },
-          "passed": true
-        },
-        {
-          "id": "reloaded_feature_response",
-          "expected": "The second process handles /auto-update-now, invokes both updater commands, and emits the successful update notification",
-          "observed": {
+            },
             "prompt": {
               "id": "feature",
               "type": "response",
@@ -233,32 +123,66 @@
               {
                 "type": "extension_ui_request",
                 "method": "notify",
-                "message": "Pi auto-update skipped: PI_AUTO_UPDATE is disabled",
-                "notifyType": "info"
-              },
+                "message": "Pi security update blocked: offline mode",
+                "notifyType": "warning"
+              }
+            ],
+            "updaterInvocations": []
+          },
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "reload_cleanup",
+      "command": "npm run smoke:pi",
+      "exit_code": 0,
+      "passed": true,
+      "evidence": "First actual Pi process:\n{\"id\":\"inventory\",\"type\":\"response\",\"command\":\"get_commands\",\"success\":true,\"data\":{\"commands\":[{\"name\":\"auto-update-model\",\"description\":\"Show or set the independent review model: provider/model or current\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<isolated-temp>/agent/npm/node_modules/pi-auto-update/extensions/auto-update.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}},{\"name\":\"auto-update-now\",\"description\":\"Stage, scan and independently review supported package changes; install only approved bytes\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<isolated-temp>/agent/npm/node_modules/pi-auto-update/extensions/auto-update.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}}]}}\n\n\nSecond actual Pi process:\n{\"id\":\"inventory\",\"type\":\"response\",\"command\":\"get_commands\",\"success\":true,\"data\":{\"commands\":[{\"name\":\"auto-update-model\",\"description\":\"Show or set the independent review model: provider/model or current\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<isolated-temp>/agent/npm/node_modules/pi-auto-update/extensions/auto-update.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}},{\"name\":\"auto-update-now\",\"description\":\"Stage, scan and independently review supported package changes; install only approved bytes\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<isolated-temp>/agent/npm/node_modules/pi-auto-update/extensions/auto-update.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}}]}}\n{\"type\":\"entry_appended\",\"entry\":{\"type\":\"custom\",\"customType\":\"auto-update-security-report\",\"data\":{\"report\":{\"started\":\"2026-10-16T19:20:00.596Z\",\"reviewModel\":\"current\",\"notices\":[\"Pi core and project-local packages deferred: no verified promotion adapter\"],\"results\":[]},\"reportPath\":\"/private<isolated-temp>/agent/auto-update-security/reports/1582ed98-f34f-49ea-bfd2-9b7f19488d5b.json\"},\"id\":\"814e0499\",\"parentId\":\"4a84a380\",\"timestamp\":\"2026-10-16T19:20:00.598Z\"}}\n{\"type\":\"extension_ui_request\",\"method\":\"notify\",\"message\":\"Pi security update completed: 0 updated, 0 blocked\\nPi core and project-local packages deferred: no verified promotion adapter\\nReport: /private<isolated-temp>/agent/auto-update-security/reports/1582ed98-f34f-49ea-bfd2-9b7f19488d5b.json\",\"notifyType\":\"info\"}\n{\"id\":\"feature\",\"type\":\"response\",\"command\":\"prompt\",\"success\":true,\"data\":{\"disposition\":\"handled\"}}\n\n",
+      "assertions": [
+        {
+          "id": "reloaded_feature_response",
+          "expected": "Pi handles a no-target security check without invoking an unconditional updater",
+          "observed": {
+            "command": {
+              "name": "auto-update-now",
+              "description": "Stage, scan and independently review supported package changes; install only approved bytes",
+              "source": "extension",
+              "sourceInfo": {
+                "path": "<isolated-temp>/agent/npm/node_modules/pi-auto-update/extensions/auto-update.ts",
+                "source": "cli",
+                "scope": "temporary",
+                "origin": "top-level"
+              }
+            },
+            "prompt": {
+              "id": "feature",
+              "type": "response",
+              "command": "prompt",
+              "success": true,
+              "data": {
+                "disposition": "handled"
+              }
+            },
+            "notifications": [
               {
                 "type": "extension_ui_request",
                 "method": "notify",
-                "message": "Pi extensions and Pi update checks completed",
+                "message": "Pi security update completed: 0 updated, 0 blocked\nPi core and project-local packages deferred: no verified promotion adapter\nReport: /private<isolated-temp>/agent/auto-update-security/reports/1582ed98-f34f-49ea-bfd2-9b7f19488d5b.json",
                 "notifyType": "info"
               }
             ],
-            "updaterInvocations": [
-              "update --extensions",
-              "update"
-            ]
+            "updaterInvocations": []
           },
           "passed": true
         },
         {
           "id": "clean_shutdown",
-          "expected": "The second actual Pi process exits naturally with code zero",
+          "expected": "Second Pi process exits naturally with code zero",
           "observed": {
             "exit_code": 0,
             "processExited": true,
             "timedOut": false,
-            "stdout_records": 7,
-            "stderr": "",
             "first_process": {
               "exit_code": 0,
               "processExited": true,
@@ -278,10 +202,10 @@
       "assertions": [
         {
           "id": "native_shell_boundary",
-          "expected": "The native host shell launches the local Pi shim and prints the pinned SDK version",
+          "expected": "Native shell prints the pinned Pi version",
           "observed": {
             "exit_code": 0,
-            "stdout": "1.2.0",
+            "stdout": "1.2.0\n",
             "stderr": "",
             "expectedVersion": "1.2.0"
           },

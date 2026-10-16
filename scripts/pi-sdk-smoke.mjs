@@ -265,6 +265,7 @@ function isolatedEnv({ agentDir, tempRoot, sdkBin, updaterBin, updaterLog, missi
 	env.npm_config_prefix = path.join(tempRoot, "npm-global");
 	env.npm_config_cache = path.join(tempRoot, "npm-cache");
 	if (updaterLog) env.PI_AUTO_UPDATE_SMOKE_LOG = updaterLog;
+	if (missingUpdater) env.PI_OFFLINE = "1"; // Explicit fail-closed manual invocation probe.
 	setPath(env, missingUpdater
 		? path.join(tempRoot, "empty-bin")
 		: [updaterBin, sdkBin, process.env.PATH].filter(Boolean).join(path.delimiter));
@@ -377,7 +378,7 @@ function createRpcRunner({ piCli, extensionEntry, agentDir, projectDir, tempRoot
 					const prompt = responses.find((row) => row?.id === "feature" && row.command === "prompt");
 					const finished = responses.some((row) => row?.type === "extension_ui_request" && row.method === "notify" &&
 						typeof row.message === "string" &&
-						(row.message === "Pi extensions and Pi update checks completed" || row.message.startsWith("Pi auto-update failed\n")),
+						(row.message.startsWith("Pi security update completed:") || row.message.startsWith("Pi security update blocked:")),
 					);
 					return prompt?.success === true && prompt.data?.disposition === "handled" && finished;
 				});
@@ -437,6 +438,7 @@ async function main() {
 	const updaterBin = path.join(tempRoot, "updater-bin");
 	await Promise.all([agentDir, projectDir, packDir, emptyBin, updaterBin].map((directory) => mkdir(directory, { recursive: true })));
 	await createUpdaterShim(updaterBin);
+	await writeFile(path.join(agentDir, "settings.json"), JSON.stringify({ packages: [] }));
 	const tarballPath = await packPackage(packDir);
 	const packageDir = await installPackedPackage(npmRoot, tarballPath, manifest.name);
 	const extensionEntry = path.join(packageDir, "extensions", "auto-update.ts");
