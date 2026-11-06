@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.10] - 2026-11-07
+
+### Changed
+
+- Pin the development Pi SDK to 1.5.0 and verify the extension against the actual Pi host.
+
 ## [0.1.9] - 2026-11-07
 
 ### Fixed
