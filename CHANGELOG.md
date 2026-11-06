@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.9] - 2026-11-07
+
+### Fixed
+
+- Read Pi SDK smoke-test expectations from the pinned manifest so SDK upgrades do not fail on stale version literals.
+
 ## [0.1.8] - 2026-10-16
 
 ### Changed

@@ -27,6 +27,8 @@ const errorNotification = {
 	message: "Pi auto-update failed\nextensions: exit 1\nPi: exit 1",
 	notifyType: "warning",
 };
+const manifest = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+const pinnedPiVersion = manifest.devDependencies["@earendil-works/pi-coding-agent"];
 
 function passed(name, values) {
 	return behaviorAssertions(name, values).every((item) => item.passed);
@@ -121,9 +123,9 @@ test("native shell assertion requires the exact pinned Pi version", () => {
 		passed("host_shell", {
 			responses: [],
 			exit_code: 0,
-			stdout: "1.2.0\n",
+			stdout: `${pinnedPiVersion}\n`,
 			stderr: "",
-			expectedVersion: "1.2.0",
+			expectedVersion: pinnedPiVersion,
 		}),
 		true,
 	);
@@ -131,9 +133,9 @@ test("native shell assertion requires the exact pinned Pi version", () => {
 		passed("host_shell", {
 			responses: [],
 			exit_code: 0,
-			stdout: "0.99.1\n",
+			stdout: "wrong-version\n",
 			stderr: "",
-			expectedVersion: "1.2.0",
+			expectedVersion: pinnedPiVersion,
 		}),
 		false,
 	);

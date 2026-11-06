@@ -5,7 +5,6 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-	EXPECTED_SDK_VERSIONS,
 	EXTENSION_LOAD_ERROR_PATTERN,
 	behaviorAssertions,
 	parseJsonLines,
@@ -419,9 +418,10 @@ async function main() {
 	const sdkVersions = {};
 	for (const name of SDK_NAMES) {
 		const installed = await readJson(path.join(root, "node_modules", name, "package.json"));
-		assert.equal(manifest.devDependencies?.[name], EXPECTED_SDK_VERSIONS[name], `manifest pin for ${name}`);
-		assert.equal(lockfile.packages?.[""]?.devDependencies?.[name], EXPECTED_SDK_VERSIONS[name], `lockfile pin for ${name}`);
-		assert.equal(installed.version, EXPECTED_SDK_VERSIONS[name], `installed version for ${name}`);
+		const manifestPin = manifest.devDependencies?.[name];
+		assert.equal(typeof manifestPin, "string", `manifest pin for ${name}`);
+		assert.equal(lockfile.packages?.[""]?.devDependencies?.[name], manifestPin, `lockfile pin for ${name}`);
+		assert.equal(installed.version, manifestPin, `installed version for ${name}`);
 		sdkVersions[name] = installed.version;
 	}
 
