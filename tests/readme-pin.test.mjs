@@ -23,6 +23,13 @@ test("README release section describes the manual owner-run Auto Release flow", 
 	assert.doesNotMatch(releaseSection, /^```\n?git push$/m);
 });
 
+test("README release section names the install pin as part of the version bump", () => {
+	const releaseSection = readme.split(/^## Release$/m)[1]?.split(/^## /m)[0];
+	assert.ok(releaseSection, "README must keep a Release section");
+	assert.match(releaseSection, /README\.md` install pin example/);
+	assert.match(releaseSection, /pi install npm:pi-auto-update@<version>/);
+});
+
 test("README package contents lists the repository scripts and tests", () => {
 	const contentsSection = readme.split(/^## Package contents$/m)[1]?.split(/^## /m)[0];
 	assert.ok(contentsSection, "README must keep a Package contents section");

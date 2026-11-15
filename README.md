@@ -136,9 +136,11 @@ This package publishes to npm through GitHub Actions Trusted Publishing, so no
 `NPM_TOKEN` is required. Releases are manual and owner-run: merging a pull
 request does not publish anything.
 
-1. Update `package.json` and `CHANGELOG.md` in the same pull request, then merge
-   it to `main`. Merging does not start a release. Do not run `npm version`:
-   this flow does not use a tag created from a workstation.
+1. Update `package.json`, `CHANGELOG.md`, and the `README.md` install pin example
+   (`pi install npm:pi-auto-update@<version>`) in the same pull request, then
+   merge it to `main`. The pin must match `package.json.version`, because
+   `npm test` fails when they disagree. Merging does not start a release. Do not
+   run `npm version`: this flow does not use a tag created from a workstation.
 2. From the Actions tab, run **Auto Release** manually on the `main` branch. The
    workflow compares `package.json` with the latest reachable `v<version>` tag
    and continues only when the version is newer and its tag does not already
