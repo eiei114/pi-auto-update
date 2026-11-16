@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.11] - 2026-11-15
+
+### Changed
+
+- Sync the README install pin example and Release section with the current
+  package version and `docs/release.md` flow, and list `scripts/` and `tests/`
+  in the package contents table. `tests/readme-pin.test.mjs` keeps the pin
+  example aligned with `package.json`. The Release step now also tells maintainers
+  to update the README install pin in the same pull request, because `npm test`
+  compares it against `package.json.version`.
+
 ## [0.1.10] - 2026-11-07
 
 ### Changed

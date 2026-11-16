@@ -38,7 +38,7 @@ pi install npm:pi-auto-update
 Pin a specific version when you want reproducible installs:
 
 ```bash
-pi install npm:pi-auto-update@0.1.4
+pi install npm:pi-auto-update@0.1.11
 ```
 
 Install into the current project instead of your user Pi settings:
@@ -95,6 +95,11 @@ pi -e .
 | `README.md` | GitHub and npm package entrypoint |
 | `CHANGELOG.md` | Versioned release notes |
 | `LICENSE` | MIT license |
+| `scripts/` | Repository-only helpers: `pi-sdk-smoke.mjs` (installed-Pi smoke), `pi-sdk-smoke-contract.mjs` (smoke expectations), `check-no-npm-token.mjs` (workflow token guard), `release-version-check.mjs` (Auto Release gate), `bench-output-parsing.mjs` (failure-output micro-benchmark) |
+| `tests/` | Repository-only `node --test` suites: extension behavior and edge cases, installed-package smoke, Pi SDK smoke contract, release gate, README pin check |
+
+Only the first five paths above are published in the npm tarball; `scripts/` and
+`tests/` stay in the repository and are excluded by `files` in `package.json`.
 
 ## Development
 
@@ -127,14 +132,25 @@ failures. The smoke makes no model requests. CI runs it as part of `npm run ci`.
 
 ## Release
 
-This package is set up for npm Trusted Publishing, so no `NPM_TOKEN` is required.
+This package publishes to npm through GitHub Actions Trusted Publishing, so no
+`NPM_TOKEN` is required. Releases are manual and owner-run: merging a pull
+request does not publish anything.
 
-```bash
-npm version patch
-git push
-```
+1. Update `package.json`, `CHANGELOG.md`, and the `README.md` install pin example
+   (`pi install npm:pi-auto-update@<version>`) in the same pull request, then
+   merge it to `main`. The pin must match `package.json.version`, because
+   `npm test` fails when they disagree. Merging does not start a release. Do not
+   run `npm version`: this flow does not use a tag created from a workstation.
+2. From the Actions tab, run **Auto Release** manually on the `main` branch. The
+   workflow compares `package.json` with the latest reachable `v<version>` tag
+   and continues only when the version is newer and its tag does not already
+   exist. If it cannot verify the previous tag and its package version, it
+   skips the release.
+3. On a verified version bump, `auto-release.yml` creates `v<version>` and a
+   GitHub Release, then dispatches `publish.yml`, which publishes with
+   provenance. Reruns skip versions already present on npm.
 
-See [`docs/release.md`](docs/release.md) for setup details.
+See [`docs/release.md`](docs/release.md) for setup details and skip conditions.
 
 ## Docs
 
