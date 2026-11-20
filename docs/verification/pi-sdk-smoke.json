@@ -8,7 +8,7 @@
     "@earendil-works/pi-tui": "1.5.2"
   },
   "platform": "win32",
-  "head_sha": "6a66375148b815ea3db27a31d1a28066400bb22f",
+  "head_sha": "e937afa276d2106bd5be6f9ee764a66d7e43ca6d",
   "node_version": "v26.12.1",
   "model_inference": "none; actual Pi CLI/RPC and package extension lifecycle, with an isolated empty Pi agent directory",
   "unhandled_errors": 0,
@@ -75,6 +75,7 @@
           "observed": {
             "offlineFlag": true,
             "piOffline": null,
+            "piOfflineKeys": [],
             "piAutoUpdate": "1"
           },
           "passed": true
