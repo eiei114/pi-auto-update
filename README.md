@@ -27,6 +27,11 @@ Pi Auto Update is a TypeScript Pi package that runs Pi's own update commands onc
 - Provides `/auto-update-now` for an explicit update check.
 - Reports failures in the Pi UI without aborting session startup.
 
+With the verified Pi SDK 1.5.2, `pi --offline` sets `PI_OFFLINE=1` before
+loading extensions, so it also skips automatic updates. To disable startup
+updates explicitly, set `PI_OFFLINE=1` or `PI_AUTO_UPDATE=0` in Pi's environment.
+The manual `/auto-update-now` command still runs when explicitly requested.
+
 ## Install
 
 Install the published npm package with Pi:
@@ -125,7 +130,9 @@ into a temporary Pi agent directory, and checks package loading with
 `npm run smoke:pi` separately launches the locally pinned Pi CLI in RPC mode,
 loads the packed extension, runs its manual update command, verifies handled
 failures and a second-process restart/cleanup, and exercises the native host
-shell. The actual Pi host and extension handler run in isolated Pi/npm
+shell. It also starts a real Pi process with `--offline`, `PI_OFFLINE` unset,
+and `PI_AUTO_UPDATE=1`, requiring the offline skip notification and zero updater
+shim invocations. The actual Pi host and extension handler run in isolated Pi/npm
 directories; temporary updater shims record both commands and prevent real
 package or Pi updates. The error case removes the shims to verify handled
 failures. The smoke makes no model requests. CI runs it as part of `npm run ci`.

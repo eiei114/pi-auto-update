@@ -8,6 +8,21 @@ export const SDK_NAMES = [
 export const UNHANDLED_ERROR_PATTERN = /UnhandledPromiseRejection|uncaught exception|shutdown error/i;
 export const EXTENSION_LOAD_ERROR_PATTERN = /Failed to load extension|Error loading extension/i;
 
+export function withoutEnvironmentKeys(env, names) {
+	const excluded = new Set(names.map((name) => name.toLowerCase()));
+	return Object.fromEntries(Object.entries(env).filter(([name]) => !excluded.has(name.toLowerCase())));
+}
+
+export function startupConfiguration(args, env) {
+	const piOfflineKeys = Object.keys(env).filter((name) => name.toLowerCase() === "pi_offline");
+	return {
+		offlineFlag: args.includes("--offline"),
+		piOffline: piOfflineKeys.length > 0 ? env[piOfflineKeys[0]] : null,
+		piOfflineKeys,
+		piAutoUpdate: env.PI_AUTO_UPDATE,
+	};
+}
+
 export function parseJsonLines(output) {
 	return output.split(/\r?\n/).flatMap((line) => {
 		if (!line.trim()) return [];
@@ -52,6 +67,7 @@ export function behaviorAssertions(name, {
 	processExited,
 	timedOut,
 	expectedVersion,
+	startupConfiguration,
 }) {
 	const registration = commandRegistered(responses);
 	const prompt = commandResponse(responses);
@@ -67,6 +83,28 @@ export function behaviorAssertions(name, {
 				"The actual Pi RPC command inventory contains the installed package command auto-update-now",
 				registration,
 				registration.response?.success === true && registration.command?.source === "extension",
+			),
+		];
+	}
+	if (name === "offline_startup") {
+		const offlineNotification = notifyRows.find((row) =>
+			row.message === "Pi auto-update skipped: offline mode" && row.notifyType === "info",
+		);
+		return [
+			assertion(
+				"offline_startup_configuration",
+				"The actual Pi CLI starts with --offline, PI_OFFLINE unset, and PI_AUTO_UPDATE=1",
+				startupConfiguration ?? null,
+				startupConfiguration?.offlineFlag === true && startupConfiguration.piOffline === null &&
+					Array.isArray(startupConfiguration.piOfflineKeys) && startupConfiguration.piOfflineKeys.length === 0 &&
+					startupConfiguration.piAutoUpdate === "1",
+			),
+			assertion(
+				"offline_startup_skipped",
+				"The installed extension registers, reports the offline startup skip, and invokes no updater shim",
+				{ registration, notification: offlineNotification ?? null, updaterInvocations },
+				registration.response?.success === true && registration.command?.source === "extension" &&
+					!!offlineNotification && Array.isArray(updaterInvocations) && updaterInvocations.length === 0,
 			),
 		];
 	}
