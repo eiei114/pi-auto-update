@@ -8,6 +8,21 @@ export const SDK_NAMES = [
 export const UNHANDLED_ERROR_PATTERN = /UnhandledPromiseRejection|uncaught exception|shutdown error/i;
 export const EXTENSION_LOAD_ERROR_PATTERN = /Failed to load extension|Error loading extension/i;
 
+export function withoutEnvironmentKeys(env, names) {
+	const excluded = new Set(names.map((name) => name.toLowerCase()));
+	return Object.fromEntries(Object.entries(env).filter(([name]) => !excluded.has(name.toLowerCase())));
+}
+
+export function startupConfiguration(args, env) {
+	const piOfflineKeys = Object.keys(env).filter((name) => name.toLowerCase() === "pi_offline");
+	return {
+		offlineFlag: args.includes("--offline"),
+		piOffline: piOfflineKeys.length > 0 ? env[piOfflineKeys[0]] : null,
+		piOfflineKeys,
+		piAutoUpdate: env.PI_AUTO_UPDATE,
+	};
+}
+
 export function parseJsonLines(output) {
 	return output.split(/\r?\n/).flatMap((line) => {
 		if (!line.trim()) return [];
@@ -81,6 +96,7 @@ export function behaviorAssertions(name, {
 				"The actual Pi CLI starts with --offline, PI_OFFLINE unset, and PI_AUTO_UPDATE=1",
 				startupConfiguration ?? null,
 				startupConfiguration?.offlineFlag === true && startupConfiguration.piOffline === null &&
+					Array.isArray(startupConfiguration.piOfflineKeys) && startupConfiguration.piOfflineKeys.length === 0 &&
 					startupConfiguration.piAutoUpdate === "1",
 			),
 			assertion(

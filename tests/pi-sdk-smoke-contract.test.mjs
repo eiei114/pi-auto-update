@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { behaviorAssertions, parseJsonLines } from "../scripts/pi-sdk-smoke-contract.mjs";
+import { behaviorAssertions, parseJsonLines, startupConfiguration, withoutEnvironmentKeys } from "../scripts/pi-sdk-smoke-contract.mjs";
 
 const commandInventory = {
 	type: "response",
@@ -114,7 +114,7 @@ test("offline startup evidence fails closed on missing skip, updater calls, or p
 		...successNotification,
 		message: "Pi auto-update skipped: offline mode",
 	};
-	const startupConfiguration = { offlineFlag: true, piOffline: null, piAutoUpdate: "1" };
+	const startupConfiguration = { offlineFlag: true, piOffline: null, piOfflineKeys: [], piAutoUpdate: "1" };
 	const evidence = {
 		responses: [commandInventory, offlineNotification],
 		updaterInvocations: [],
@@ -133,9 +133,33 @@ test("offline startup evidence fails closed on missing skip, updater calls, or p
 		{ startupConfiguration: undefined },
 		{ startupConfiguration: { ...startupConfiguration, offlineFlag: false } },
 		{ startupConfiguration: { ...startupConfiguration, piOffline: "1" } },
+		{ startupConfiguration: { ...startupConfiguration, piOfflineKeys: ["pi_offline"] } },
+		{ startupConfiguration: { ...startupConfiguration, piOfflineKeys: undefined } },
 		{ startupConfiguration: { ...startupConfiguration, piAutoUpdate: "0" } },
 	]) {
 		assert.equal(passed("offline_startup", { ...evidence, ...invalid }), false, JSON.stringify(invalid));
+	}
+});
+
+test("offline startup strips inherited environment keys regardless of case and detects surviving aliases", () => {
+	const inherited = {
+		PI_OFFLINE: "1", pi_offline: "1", Pi_Offline: "yes",
+		pi_auto_update: "0", pi_intercom_session_id: "inherited-session",
+		Path: "preserved-path", UNRELATED: "preserved-value",
+	};
+	const isolated = withoutEnvironmentKeys(inherited, ["PI_OFFLINE", "PI_AUTO_UPDATE", "PI_INTERCOM_SESSION_ID"]);
+	assert.deepEqual(isolated, { Path: "preserved-path", UNRELATED: "preserved-value" });
+	assert.equal(inherited.pi_offline, "1", "sanitizing a copy must not alter the parent environment");
+	isolated.PI_AUTO_UPDATE = "1";
+	assert.deepEqual(startupConfiguration(["--offline"], isolated), {
+		offlineFlag: true, piOffline: null, piOfflineKeys: [], piAutoUpdate: "1",
+	});
+	for (const key of ["PI_OFFLINE", "pi_offline", "Pi_Offline"]) {
+		const contaminated = startupConfiguration(["--offline"], { ...isolated, [key]: "1" });
+		assert.deepEqual(contaminated.piOfflineKeys, [key]);
+		assert.equal(contaminated.piOffline, "1");
+		const assertions = behaviorAssertions("offline_startup", { responses: [], startupConfiguration: contaminated });
+		assert.equal(assertions.find((item) => item.id === "offline_startup_configuration").passed, false);
 	}
 });
 

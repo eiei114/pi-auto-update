@@ -9,8 +9,10 @@ import {
 	behaviorAssertions,
 	parseJsonLines,
 	SDK_NAMES,
+	startupConfiguration,
 	UNHANDLED_ERROR_PATTERN,
 	VERIFICATION_CONTRACT,
+	withoutEnvironmentKeys,
 } from "./pi-sdk-smoke-contract.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -256,9 +258,12 @@ function setPath(env, value) {
 }
 
 function isolatedEnv({ agentDir, tempRoot, sdkBin, updaterBin, updaterLog, missingUpdater = false }) {
-	const env = { ...process.env };
-	delete env.PI_OFFLINE;
-	delete env.PI_INTERCOM_SESSION_ID;
+	// A spread copy loses process.env's case-insensitive lookup on Windows.
+	// Remove all spellings before assigning the isolated controls below.
+	const env = withoutEnvironmentKeys(process.env, [
+		"PI_OFFLINE", "PI_INTERCOM_SESSION_ID", "PI_CODING_AGENT_DIR", "PI_AUTO_UPDATE",
+		"PI_AUTO_UPDATE_SMOKE_LOG", "npm_config_prefix", "npm_config_cache",
+	]);
 	env.PI_CODING_AGENT_DIR = agentDir;
 	env.PI_AUTO_UPDATE = "0";
 	env.npm_config_prefix = path.join(tempRoot, "npm-global");
@@ -392,11 +397,7 @@ function createRpcRunner({ piCli, extensionEntry, agentDir, projectDir, tempRoot
 				});
 			},
 		});
-		result.startupConfiguration = {
-			offlineFlag: launchArgs.includes("--offline"),
-			piOffline: env.PI_OFFLINE ?? null,
-			piAutoUpdate: env.PI_AUTO_UPDATE,
-		};
+		result.startupConfiguration = startupConfiguration(launchArgs, env);
 		try {
 			result.updaterInvocations = (await readFile(updaterLog, "utf8")).split(/\r?\n/).filter(Boolean);
 		} catch (error) {
