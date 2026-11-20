@@ -109,6 +109,36 @@ test("RPC smoke contract requires handled errors and second-process reload evide
 	);
 });
 
+test("offline startup evidence fails closed on missing skip, updater calls, or pre-disabled updates", () => {
+	const offlineNotification = {
+		...successNotification,
+		message: "Pi auto-update skipped: offline mode",
+	};
+	const startupConfiguration = { offlineFlag: true, piOffline: null, piAutoUpdate: "1" };
+	const evidence = {
+		responses: [commandInventory, offlineNotification],
+		updaterInvocations: [],
+		startupConfiguration,
+	};
+	assert.equal(passed("offline_startup", evidence), true);
+	for (const invalid of [
+		{ responses: [commandInventory] },
+		{ responses: [commandInventory, successNotification] },
+		{ responses: [commandInventory, { ...offlineNotification, notifyType: "warning" }] },
+		{ responses: [offlineNotification] },
+		{ responses: [{ ...commandInventory, success: false }, offlineNotification] },
+		{ updaterInvocations: ["update --extensions"] },
+		{ updaterInvocations: ["update"] },
+		{ updaterInvocations: undefined },
+		{ startupConfiguration: undefined },
+		{ startupConfiguration: { ...startupConfiguration, offlineFlag: false } },
+		{ startupConfiguration: { ...startupConfiguration, piOffline: "1" } },
+		{ startupConfiguration: { ...startupConfiguration, piAutoUpdate: "0" } },
+	]) {
+		assert.equal(passed("offline_startup", { ...evidence, ...invalid }), false, JSON.stringify(invalid));
+	}
+});
+
 test("smoke runner records reviewed head and node version in the committed report", () => {
 	const source = readFileSync(new URL("../scripts/pi-sdk-smoke.mjs", import.meta.url), "utf8");
 	assert.match(source, /head_sha:\s*resolveReviewedHeadSha\(\)/);

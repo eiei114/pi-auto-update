@@ -308,6 +308,7 @@ function describeProcess(name, command, result, extraAssertions = []) {
 		processExited: result.processExited,
 		timedOut: result.timedOut,
 		expectedVersion: command.expectedVersion,
+		startupConfiguration: result.startupConfiguration,
 	}), ...extraAssertions];
 	const hasUnhandledError = UNHANDLED_ERROR_PATTERN.test(fullOutput);
 	const hasLoadError = EXTENSION_LOAD_ERROR_PATTERN.test(fullOutput);
@@ -357,11 +358,14 @@ function createRpcRunner({ piCli, extensionEntry, agentDir, projectDir, tempRoot
 		"rpc",
 	];
 	let invocation = 0;
-	const run = async (includeFeature, missingUpdater = false) => {
+	const run = async ({ includeFeature = false, missingUpdater = false, offline = false } = {}) => {
 		const updaterLog = path.join(tempRoot, `updater-invocations-${invocation++}.log`);
-		const result = await runProcess(process.execPath, args, {
+		const env = isolatedEnv({ agentDir, tempRoot, sdkBin, updaterBin, updaterLog, missingUpdater });
+		const launchArgs = offline ? [...args, "--offline"] : args;
+		if (offline) env.PI_AUTO_UPDATE = "1";
+		const result = await runProcess(process.execPath, launchArgs, {
 			cwd: projectDir,
-			env: isolatedEnv({ agentDir, tempRoot, sdkBin, updaterBin, updaterLog, missingUpdater }),
+			env,
 			timeoutMs: SHORT_PROBE_TIMEOUT_MS,
 			cleanupGraceMs: CLEANUP_GRACE_MS,
 			interact: async ({ sendRecords, waitForRecords }) => {
@@ -369,6 +373,12 @@ function createRpcRunner({ piCli, extensionEntry, agentDir, projectDir, tempRoot
 				await waitForRecords((responses) => responses.some((row) =>
 					row?.id === "inventory" && row.command === "get_commands" && row.success === true,
 				));
+				if (offline) {
+					await waitForRecords((responses) => responses.some((row) =>
+						row?.type === "extension_ui_request" && row.method === "notify" &&
+						row.message === "Pi auto-update skipped: offline mode" && row.notifyType === "info",
+					));
+				}
 				if (!includeFeature) return;
 
 				sendRecords([{ id: "feature", type: "prompt", message: "/auto-update-now" }]);
@@ -382,6 +392,11 @@ function createRpcRunner({ piCli, extensionEntry, agentDir, projectDir, tempRoot
 				});
 			},
 		});
+		result.startupConfiguration = {
+			offlineFlag: launchArgs.includes("--offline"),
+			piOffline: env.PI_OFFLINE ?? null,
+			piAutoUpdate: env.PI_AUTO_UPDATE,
+		};
 		try {
 			result.updaterInvocations = (await readFile(updaterLog, "utf8")).split(/\r?\n/).filter(Boolean);
 		} catch (error) {
@@ -445,17 +460,23 @@ async function main() {
 	const cases = [];
 
 	try {
-		const extensionLoad = await rpc.run(false);
+		const extensionLoad = await rpc.run();
 		cases.push(describeProcess("extension_load", commandMeta, extensionLoad));
 
-		const happyPath = await rpc.run(true);
+		const offlineStartup = await rpc.run({ offline: true });
+		cases.push(describeProcess("offline_startup", {
+			...commandMeta,
+			updaterInvocations: offlineStartup.updaterInvocations,
+		}, offlineStartup));
+
+		const happyPath = await rpc.run({ includeFeature: true });
 		cases.push(describeProcess("happy_path", { ...commandMeta, updaterInvocations: happyPath.updaterInvocations }, happyPath));
 
-		const errorPath = await rpc.run(true, true);
+		const errorPath = await rpc.run({ includeFeature: true, missingUpdater: true });
 		cases.push(describeProcess("error_path", commandMeta, errorPath));
 
-		const firstProcess = await rpc.run(false);
-		const secondProcess = await rpc.run(true);
+		const firstProcess = await rpc.run();
+		const secondProcess = await rpc.run({ includeFeature: true });
 		const secondResult = describeProcess("reload_cleanup", {
 			...commandMeta,
 			updaterInvocations: secondProcess.updaterInvocations,

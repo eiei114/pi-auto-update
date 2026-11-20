@@ -52,6 +52,7 @@ export function behaviorAssertions(name, {
 	processExited,
 	timedOut,
 	expectedVersion,
+	startupConfiguration,
 }) {
 	const registration = commandRegistered(responses);
 	const prompt = commandResponse(responses);
@@ -67,6 +68,27 @@ export function behaviorAssertions(name, {
 				"The actual Pi RPC command inventory contains the installed package command auto-update-now",
 				registration,
 				registration.response?.success === true && registration.command?.source === "extension",
+			),
+		];
+	}
+	if (name === "offline_startup") {
+		const offlineNotification = notifyRows.find((row) =>
+			row.message === "Pi auto-update skipped: offline mode" && row.notifyType === "info",
+		);
+		return [
+			assertion(
+				"offline_startup_configuration",
+				"The actual Pi CLI starts with --offline, PI_OFFLINE unset, and PI_AUTO_UPDATE=1",
+				startupConfiguration ?? null,
+				startupConfiguration?.offlineFlag === true && startupConfiguration.piOffline === null &&
+					startupConfiguration.piAutoUpdate === "1",
+			),
+			assertion(
+				"offline_startup_skipped",
+				"The installed extension registers, reports the offline startup skip, and invokes no updater shim",
+				{ registration, notification: offlineNotification ?? null, updaterInvocations },
+				registration.response?.success === true && registration.command?.source === "extension" &&
+					!!offlineNotification && Array.isArray(updaterInvocations) && updaterInvocations.length === 0,
 			),
 		];
 	}
