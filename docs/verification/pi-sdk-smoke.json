@@ -2,13 +2,13 @@
   "schema_version": 1,
   "verification_contract": "pi-sdk-behavior-v2",
   "sdk_versions": {
-    "@earendil-works/pi-agent-core": "1.5.0",
-    "@earendil-works/pi-ai": "1.5.0",
-    "@earendil-works/pi-coding-agent": "1.5.0",
-    "@earendil-works/pi-tui": "1.5.0"
+    "@earendil-works/pi-agent-core": "1.5.2",
+    "@earendil-works/pi-ai": "1.5.2",
+    "@earendil-works/pi-coding-agent": "1.5.2",
+    "@earendil-works/pi-tui": "1.5.2"
   },
   "platform": "win32",
-  "head_sha": "20d72683b0c08764237f44a87c743076d93b3b6d",
+  "head_sha": "6a66375148b815ea3db27a31d1a28066400bb22f",
   "node_version": "v26.12.1",
   "model_inference": "none; actual Pi CLI/RPC and package extension lifecycle, with an isolated empty Pi agent directory",
   "unhandled_errors": 0,
@@ -57,6 +57,73 @@
                 "origin": "top-level"
               }
             }
+          },
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "offline_startup",
+      "command": "npm run smoke:pi",
+      "exit_code": 0,
+      "passed": true,
+      "evidence": "{\"type\":\"extension_ui_request\",\"method\":\"notify\",\"message\":\"Pi auto-update skipped: offline mode\",\"notifyType\":\"info\"}\n{\"id\":\"inventory\",\"type\":\"response\",\"command\":\"get_commands\",\"success\":true,\"data\":{\"commands\":[{\"name\":\"auto-update-now\",\"description\":\"Run pi update --extensions, then pi update\",\"source\":\"extension\",\"sourceInfo\":{\"path\":\"<isolated-temp>\\\\agent\\\\npm\\\\node_modules\\\\pi-auto-update\\\\extensions\\\\auto-update.ts\",\"source\":\"cli\",\"scope\":\"temporary\",\"origin\":\"top-level\"}}]}}\n\n",
+      "assertions": [
+        {
+          "id": "offline_startup_configuration",
+          "expected": "The actual Pi CLI starts with --offline, PI_OFFLINE unset, and PI_AUTO_UPDATE=1",
+          "observed": {
+            "offlineFlag": true,
+            "piOffline": null,
+            "piAutoUpdate": "1"
+          },
+          "passed": true
+        },
+        {
+          "id": "offline_startup_skipped",
+          "expected": "The installed extension registers, reports the offline startup skip, and invokes no updater shim",
+          "observed": {
+            "registration": {
+              "response": {
+                "id": "inventory",
+                "type": "response",
+                "command": "get_commands",
+                "success": true,
+                "data": {
+                  "commands": [
+                    {
+                      "name": "auto-update-now",
+                      "description": "Run pi update --extensions, then pi update",
+                      "source": "extension",
+                      "sourceInfo": {
+                        "path": "<isolated-temp>\\agent\\npm\\node_modules\\pi-auto-update\\extensions\\auto-update.ts",
+                        "source": "cli",
+                        "scope": "temporary",
+                        "origin": "top-level"
+                      }
+                    }
+                  ]
+                }
+              },
+              "command": {
+                "name": "auto-update-now",
+                "description": "Run pi update --extensions, then pi update",
+                "source": "extension",
+                "sourceInfo": {
+                  "path": "<isolated-temp>\\agent\\npm\\node_modules\\pi-auto-update\\extensions\\auto-update.ts",
+                  "source": "cli",
+                  "scope": "temporary",
+                  "origin": "top-level"
+                }
+              }
+            },
+            "notification": {
+              "type": "extension_ui_request",
+              "method": "notify",
+              "message": "Pi auto-update skipped: offline mode",
+              "notifyType": "info"
+            },
+            "updaterInvocations": []
           },
           "passed": true
         }
@@ -274,16 +341,16 @@
       "command": "npm run smoke:pi",
       "exit_code": 0,
       "passed": true,
-      "evidence": "1.5.0\n\n\n",
+      "evidence": "1.5.2\n\n\n",
       "assertions": [
         {
           "id": "native_shell_boundary",
           "expected": "The native host shell launches the local Pi shim and prints the pinned SDK version",
           "observed": {
             "exit_code": 0,
-            "stdout": "1.5.0",
+            "stdout": "1.5.2",
             "stderr": "",
-            "expectedVersion": "1.5.0"
+            "expectedVersion": "1.5.2"
           },
           "passed": true
         }
