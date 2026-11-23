@@ -217,6 +217,50 @@ test("reports a non-Error rejection string as a failure", async () => {
 	assert.equal(surface.notifications[0][1], "warning");
 });
 
+test("reports Windows extension recovery instructions alongside the Pi result", async (t) => {
+	const platform = Object.getOwnPropertyDescriptor(process, "platform");
+	Object.defineProperty(process, "platform", { value: "win32" });
+	t.after(() => Object.defineProperty(process, "platform", platform));
+
+	const piFailure = { ...ok(""), stderr: "npm ERR! Pi update failed", code: 1 };
+	const recovery = "close all Pi runtimes and run pi update --extensions from a shell";
+	const cases = [
+		{
+			name: "package lock",
+			intercomSession: undefined,
+			extensionResult: { ...ok(""), stderr: "npm ERR! EBUSY: file in use", code: 1 },
+			notice: `extensions: deferred — Windows package files are in use; ${recovery}`,
+			expectedCalls: [piInvocation(["update", "--extensions"]), piInvocation(["update"])],
+		},
+		{
+			name: "preflight skip",
+			intercomSession: "active-session",
+			notice: `extensions: skipped — an active pi-intercom runtime may keep extension package files locked; ${recovery}`,
+			expectedCalls: [piInvocation(["update"])],
+		},
+	];
+
+	for (const { name, intercomSession, extensionResult, notice, expectedCalls } of cases) {
+		for (const piFailed of [false, true]) {
+			await t.test(`${name}, Pi ${piFailed ? "fails" : "succeeds"}`, async (t) => {
+				t.after(setEnv({ PI_INTERCOM_SESSION_ID: intercomSession }));
+				const surface = createCtx();
+				const harness = createPi(async (_command, _args, count) => {
+					if (extensionResult && count === 1) return extensionResult;
+					return piFailed ? piFailure : ok();
+				});
+
+				await harness.handlers.get("session_start")({ reason: "startup" }, surface.ctx);
+
+				assert.deepEqual(harness.calls, expectedCalls);
+				assert.deepEqual(surface.notifications, piFailed
+					? [[`Pi auto-update failed\nPi: exit 1 — npm ERR! Pi update failed\n${notice}`, "warning"]]
+					: [[`Pi auto-update completed\n${notice}`, "info"]]);
+			});
+		}
+	}
+});
+
 test("uses the last non-empty stderr line for a failed Pi update", async () => {
 	const harness = createPi(async (_command, _args, count) => {
 		if (count === 1) return ok();
