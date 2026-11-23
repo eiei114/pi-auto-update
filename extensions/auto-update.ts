@@ -162,7 +162,8 @@ export default function (pi: ExtensionAPI) {
 			if (!ctx.hasUI) return;
 
 			if (failures.length > 0) {
-				ctx.ui.notify(`Pi auto-update failed\n${failures.join("\n")}`, "warning");
+				const details = [...failures, ...notices].join("\n");
+				ctx.ui.notify(`Pi auto-update failed\n${details}`, "warning");
 			} else if (notices.length > 0) {
 				ctx.ui.notify(`Pi auto-update completed\n${notices.join("\n")}`, "info");
 			} else {
