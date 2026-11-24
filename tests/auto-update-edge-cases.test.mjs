@@ -203,6 +203,19 @@ test("reports a rejected exec as a failure and still runs the Pi step", async ()
 	assert.deepEqual(surface.statuses.at(-1), [STATUS_KEY, undefined]);
 });
 
+test("reports a terminated extension step as a failure and still runs the Pi step", async () => {
+	const harness = createPi(async (_command, _args, count) => {
+		if (count === 1) return { ...ok(""), code: 1, killed: true };
+		return ok();
+	});
+	const surface = createCtx();
+
+	await harness.handlers.get("session_start")({ reason: "startup" }, surface.ctx);
+	assert.deepEqual(harness.calls, [piInvocation(["update", "--extensions"]), piInvocation(["update"])]);
+	assert.deepEqual(surface.notifications, [["Pi auto-update failed\nextensions: terminated", "warning"]]);
+	assert.deepEqual(surface.statuses.at(-1), [STATUS_KEY, undefined]);
+});
+
 test("reports a non-Error rejection string as a failure", async () => {
 	const harness = createPi(async (_command, _args, count) => {
 		if (count === 1) throw "exec rejected";

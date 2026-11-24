@@ -135,7 +135,9 @@ export default function (pi: ExtensionAPI) {
 							timeout: UPDATE_TIMEOUT_MS,
 						});
 
-						if (result.code !== 0) {
+						if (result.killed) {
+							failures.push(`${step.label}: terminated`);
+						} else if (result.code !== 0) {
 							const detail = lastOutputLine(result.stdout, result.stderr);
 							if (
 								step.label === "extensions" &&
