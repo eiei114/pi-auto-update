@@ -230,6 +230,26 @@ test("reports a non-Error rejection string as a failure", async () => {
 	assert.equal(surface.notifications[0][1], "warning");
 });
 
+test("defers a rejected Windows extension lock and still updates Pi", async (t) => {
+	const platform = Object.getOwnPropertyDescriptor(process, "platform");
+	Object.defineProperty(process, "platform", { value: "win32" });
+	t.after(() => Object.defineProperty(process, "platform", platform));
+
+	const harness = createPi(async (_command, _args, count) => {
+		if (count === 1) throw new Error("EBUSY: file in use");
+		return ok();
+	});
+	const surface = createCtx();
+
+	await harness.handlers.get("session_start")({ reason: "startup" }, surface.ctx);
+
+	assert.deepEqual(harness.calls, [piInvocation(["update", "--extensions"]), piInvocation(["update"])]);
+	assert.deepEqual(surface.notifications, [[
+		"Pi auto-update completed\nextensions: deferred — Windows package files are in use; close all Pi runtimes and run pi update --extensions from a shell",
+		"info",
+	]]);
+});
+
 test("reports Windows extension recovery instructions alongside the Pi result", async (t) => {
 	const platform = Object.getOwnPropertyDescriptor(process, "platform");
 	Object.defineProperty(process, "platform", { value: "win32" });
